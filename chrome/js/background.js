@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright 2015-2019 SilverTuxedo
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@ var factorySettings =
     hideAccessibilityMenu: false,
     disableLiveTyping: false,
     disableLiveTypingPm: false,
+	connectedStaff: false,
     hideSticky: {
         active: false,
         includingRules: false,
