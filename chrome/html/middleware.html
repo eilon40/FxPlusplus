@@ -19,24 +19,9 @@
     <title></title>
     <meta charset="utf-8" />
 	<style>
-	* {
-		::-webkit-scrollbar { width: 10px; }
-		::-webkit-scrollbar-track { background: #f1f1f1; }
-		::-webkit-scrollbar-thumb { background: #888; }
-		::-webkit-scrollbar-thumb:hover { background: #555; }
-	}
-	body { 
-		margin: 0;
-	}
-    .iframe-container { 
-		display: flex;
-		height: 100vh;
-		overflow: hidden;
-	}
-    .iframe-container iframe { 
-		flex: 1;
-		border: none;
-	}
+	body { margin: 0; }
+    	.iframe-container { display: flex; height: 100vh; overflow: hidden; }
+    	.iframe-container iframe { flex: 1; border: none; }
 	</style>
 </head>
 <body>
@@ -45,6 +30,13 @@
 		<iframe src="https://www.fxp.co.il"></iframe>
     </div>
 	<script>
+		//top 			// GM_addStyle(`
+		// ::-webkit-scrollbar { width: 10px; }
+		// ::-webkit-scrollbar-track { background: #f1f1f1; }
+		// ::-webkit-scrollbar-thumb { background: #888; }
+		// ::-webkit-scrollbar-thumb:hover { background: #555; }
+		// `);
+
 	//    document.cookie = 'bb_userstyleid=12; domain=www.fxp.co.il; path=/';
 	//IFRAME COOKIE
 	/*
