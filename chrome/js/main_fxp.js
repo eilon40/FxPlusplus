@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright 2015-2019 SilverTuxedo
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -223,6 +223,17 @@ chrome.storage.sync.get("settings", function (data)
         addStyle(".nagish-button { display: none; }");
     }
 
+	if (settings.connectedStaff && location.pathname === '/forumdisplay.php') {
+		console.log('1111');
+		document.querySelectorAll('.flo .username').forEach(user => {
+			const promise = fetch(user.href).then(response => response.text())
+			promise.then(function(data) {
+				if (!data.includes(user.innerText + ' מחובר/ת')) return;
+					user.innerHTML += '<svg width="10px" height="10px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#00FF00" d="m2 12a10 10 0 1 1 10 10 10 10 0 0 1 -10-10z"/></svg>';
+			})
+		})
+	}
+
     $(document).ready(function ()
     { //DOM is ready for manipulation
         debug.info("Page ready");
@@ -347,11 +358,11 @@ chrome.storage.sync.get("settings", function (data)
             if (settings.showForumStats)
             {
                 debug.info("showForumStats is enabled");
-
+				const total = document.querySelectorAll('#threads .threadtitle').length;
                 $(".threads_list_fxp").after(
                     $("<div>", { id: "forumStatsContainer" }).append(
                         $("<div>", { id: "forumStats" }).append(
-                            $("<i>").text("סטטיסטיקות:")
+                            $("<i>").text("נתונים סטטיסטיים של "+total+" אשכולות:")
                         )
                     )
                 );
@@ -3667,7 +3678,7 @@ function handleRatingSuggestion()
                 ).append($("<br>")).append(
                     $("<span>", { style: "font-weight: bold" }).text("כדי לפתוח את הגדרות התוסף, לחץ על כפתור גלגל השיניים בבר העליון.")
                 ).append(
-                    $("<img>", { id: "howToSettingsImg", src: chrome.extension.getURL("images/howtoSettings.png"), height: 44 })
+                    $("<img>", { id: "howToSettingsImg", src: chrome.extension.getURL("images/howtoSettings.png"), height: 290 })
                 );
 
                 $("body").append($("<div>", { class: "bottomFloat" }).append(
