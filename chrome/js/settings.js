@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright 2015-2019 SilverTuxedo
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -321,6 +321,7 @@ function loadGeneral(settings)
     $("#nightEndTime").val(settings.autoNightmode.end);
     $("#showForumStats").prop("checked", settings.showForumStats);
     $("#hideAccessibilityMenu").prop("checked", settings.hideAccessibilityMenu);
+	$("#connectedStaff").prop("checked", settings.connectedStaff);
     $("#disableLiveTyping").prop("checked", settings.disableLiveTyping).change();
     $("#disableLiveTypingPm").prop("checked", settings.disableLiveTypingPm);
 
@@ -1106,6 +1107,8 @@ $(".saveSettings").click(function ()
             settings.autoNightmode.end = $("#nightEndTime").val();
             settings.showForumStats = $("#showForumStats").prop("checked");
             settings.hideAccessibilityMenu = $("#hideAccessibilityMenu").prop("checked");
+			settings.connectedStaff = $("#connectedStaff").prop("checked");
+
             settings.disableLiveTyping = $("#disableLiveTyping").prop("checked");
             settings.disableLiveTypingPm = $("#disableLiveTypingPm").prop("checked");
 
