@@ -16,7 +16,7 @@
  */
 
 "use strict";
-
+//todo add friends icon https://w7.pngwing.com/pngs/236/25/png-transparent-computer-icons-avatar-friends-love-text-logo-thumbnail.png
 var versionDescription = "תיקונים ושיפורים כלליים.";
 var versionBig = false;
 var versionHref = "https://fxplusplus.blogspot.com/2019/11/155.html";
@@ -118,54 +118,6 @@ chrome.storage.local.get("knownIds", function (data)
         globalKnownIds = {};
 });
 
-//selectors for elements which can have special colors, used for nightmode
-var colorfulElementSelectors = [
-    "[color]",
-    "[style^='color:']",
-    "[style*=' color:']",
-    "[style*=';color:']",
-    ".usertitle",
-    ".usertitle *",
-    ".friend_info .description",
-    ".friend_info .description *",
-    ".postcontent",
-    ".vm_blockrow blockquote",
-    ".prefixtit"
-];
-
-
-//night mode is active
-if (localStorage.getItem("nightmodeEnabled") == "true")
-{
-    //temporarily add a black screen so the screen doesn't flash white while the user switches pages
-    var darkElement = document.createElement("div");
-    darkElement.setAttribute("style", "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background:black; z-index: 999999999999999;");
-    darkElement.setAttribute("id", "happyEyes");
-    document.documentElement.appendChild(document.importNode(darkElement, true));
-
-    //check when body is added to the document
-    observers.htmlTree = new MutationObserver(function (mutations)
-    {
-        mutations.forEach(function (mutation)
-        {
-            if (mutation.addedNodes.length > 0)
-                if (mutation.addedNodes[0].tagName === "BODY") //body added
-                {
-                    //append the style
-                    activateNightmode();
-                    debug.info("night mode applied");
-                    setTimeout(function ()
-                    {
-                        //remove black screen
-                        $("#happyEyes").fadeOut(100);
-                    }, 200);
-                    observers.htmlTree.disconnect();
-                }
-        });
-    });
-    observers.htmlTree.observe(document.documentElement, { childList: true });
-}
-
 /*
  * 
  * the magic starts here
@@ -174,14 +126,12 @@ if (localStorage.getItem("nightmodeEnabled") == "true")
 var settings;
 chrome.storage.sync.get("settings", function (data)
 { //get settings
-    if (data)
-        settings = data.settings || {};
-    else
-        settings = {};
-
-    readTimeSpeed = settings.readtime.speed;
+	settings = data.settings || {};
+   
+   readTimeSpeed = settings.readtime.speed;
 
     //add custom background
+	//todo add with fxp dark mode
     if (localStorage.getItem("nightmodeEnabled") == "true")
     {
         if (settings.customBg.night.length > 0)
@@ -224,14 +174,32 @@ chrome.storage.sync.get("settings", function (data)
     }
 
 	if (settings.connectedStaff && location.pathname === '/forumdisplay.php') {
-		console.log('1111');
+		//todo: temp
+		window.onload = function() {
 		document.querySelectorAll('.flo .username').forEach(user => {
+			console.log(user);
 			const promise = fetch(user.href).then(response => response.text())
 			promise.then(function(data) {
+				console.log('first:'+ user.innerText)
+
 				if (!data.includes(user.innerText + ' מחובר/ת')) return;
+				console.log(user.innerText)
 					user.innerHTML += '<svg width="10px" height="10px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#00FF00" d="m2 12a10 10 0 1 1 10 10 10 10 0 0 1 -10-10z"/></svg>';
 			})
 		})
+		}
+	}
+
+	const top = window.parent.top
+	console.log(top.location.pathname);
+	if (top != window && top.location.pathname == '/middleware') {
+			console.log('2222');
+			// GM_addStyle(`
+		// ::-webkit-scrollbar { width: 10px; }
+		// ::-webkit-scrollbar-track { background: #f1f1f1; }
+		// ::-webkit-scrollbar-thumb { background: #888; }
+		// ::-webkit-scrollbar-thumb:hover { background: #555; }
+		// `);
 	}
 
     $(document).ready(function ()
@@ -722,11 +690,6 @@ chrome.storage.sync.get("settings", function (data)
                         });
                     }
 
-                    //brighten new comment content if nightmode is active
-                    if (localStorage.getItem("nightmodeEnabled") == "true")
-                    {
-                        utils.brightenBySelectors(addedComment, colorfulElementSelectors);
-                    }
 
                     checkCommentFilter(settings.commentFilters, addedComment); //apply filters to new comment
 
@@ -1253,48 +1216,7 @@ chrome.storage.sync.get("settings", function (data)
                 observers.insideEditor.observe($(".chat-text-input .send-element div#input-textarea")[0], { childList: true });
         }
 
-        if (localStorage.getItem("nightmodeEnabled") == "true") //make sure nightmode is active after DOM is ready
-        {
-            activateNightmode();
-        }
-
         //shortcut to toggle night mode
-        if (settings.nightmodeShortcut)
-        {
-            var img;
-            var balloonText;
-            if (localStorage.getItem("nightmodeEnabled") == "true")
-            {
-                img = chrome.extension.getURL("images/nightmode-on.svg");
-                balloonText = "כבה מצב לילה";
-            }
-            else
-            {
-                img = chrome.extension.getURL("images/nightmode-off.svg");
-                balloonText = "הפעל מצב לילה";
-            }
-            $("body").append(
-                $("<div>", { id: "nightmodeShortcut", class: "balloonNoBorder", style: "background-image: url(" + img + ")", "data-balloon": balloonText, "data-balloon-pos": "left" })
-            );
-
-            //toggle night mode
-            $("#nightmodeShortcut").click(function ()
-            {
-                var state = localStorage.getItem("nightmodeEnabled") == "true";
-                localStorage.setItem("nightmodeEnabled", !state);
-
-                if (state)
-                    disableNightmode();
-                else
-                    activateNightmode();
-
-                localStorage.setItem("nightmodeOverride", true); //prevent auto nightmode to change the mode
-
-                chrome.runtime.sendMessage({ nightmodeState: !state, ttl: 1 });
-            });
-        }
-
-        //auto night mode enabled
         if (settings.autoNightmode.active)
         {
             debug.info("autoNightmode is enabled");
@@ -1318,8 +1240,10 @@ chrome.storage.sync.get("settings", function (data)
             {
                 if (!rangeActive) //no longer night time
                 {
+					console.log('s1')
+					toggleDarkMode();
                     localStorage.setItem("nightmodeEnabled", false);
-                    disableNightmode();
+                    //disableNightmode();
                     localStorage.setItem("lastAutoNightChange", "day");
                 }
             }
@@ -1327,8 +1251,10 @@ chrome.storage.sync.get("settings", function (data)
             {
                 if (rangeActive) //it is night time
                 {
+					console.log('s2');
+					toggleDarkMode();
                     localStorage.setItem("nightmodeEnabled", true);
-                    activateNightmode();
+                    // activateNightmode();
                     localStorage.setItem("lastAutoNightChange", "night");
                 }
             }
@@ -1502,7 +1428,26 @@ chrome.storage.sync.get("settings", function (data)
     });
 });
 
+function getCookie(cookieName) {
+  const cookies = document.cookie.split('; ');
+  for (let i = 0; i < cookies.length; i++) {
+    const [name, value] = cookies[i].split('=');
+    if (name === cookieName) {
+      return value;
+    }
+  }
+  return null; // If cookie not found, return null
+}
 
+
+function toggleDarkMode() {
+	//todo disable enable
+	const bool = getCookie('bb_darkmode') == '1';
+	chrome.runtime.sendMessage({
+		value: bool ? '0' : '1'
+	})
+	// document.cookie = `bb_darkmode=${bool ? '0' : '1'}; domain=www.fxp.co.il; path=/`;
+}
 
 //receive night mode state changes
 chrome.runtime.onMessage.addListener(
@@ -1510,10 +1455,7 @@ chrome.runtime.onMessage.addListener(
     {
         if (request.hasOwnProperty("nightmodeState"))
         {
-            if (request.nightmodeState)
-                activateNightmode();
-            else
-                disableNightmode();
+			toggleDarkMode();
         }
     }
 );
@@ -1523,8 +1465,7 @@ function getPagination(comments)
 {
     if (comments > 15)
         return "&page=" + Math.ceil(comments / 15);
-    else
-        return "";
+    return "";
 }
 
 //handler for key combinations
@@ -1976,11 +1917,6 @@ function loadMinithread(threadLink, element, pm)
 
         }
 
-        //brighten content if nightmode is active
-        if (localStorage.getItem("nightmodeEnabled") == "true")
-        {
-            utils.brightenBySelectors(element, colorfulElementSelectors);
-        }
     });
 }
 
@@ -2951,14 +2887,7 @@ function quickEditSubnick(subnickElement)
             updateSubnick(userId, subnick);
             updateKnownIds(userId, userName);
 
-            if (localStorage.getItem("nightmodeEnabled") == "true") //rebrighten element
-            {
-                utils.reverseBrightening(usertitle);
-                utils.setSubnickContainer(subnick, usertitle);
-                setTimeout(function () { utils.brightenBySelectors(usertitle, colorfulElementSelectors) }, 100); //the DOM doesn't update so wait a bit and then brighten.
-            }
-            else
-                utils.setSubnickContainer(subnick, usertitle);
+            utils.setSubnickContainer(subnick, usertitle);
         }
         usertitle.show();
 
@@ -2992,67 +2921,6 @@ function changeBadge(str)
 {
     str = "" + str; //make sure it's a string
     chrome.browserAction.setBadgeText({ text: str });
-}
-
-//force activates night mode
-function activateNightmode()
-{
-    var oldStyles = $("style#customBg, link#nightmodeStyle");
-    //add nightmode stylesheet
-    $("body").append($("<link>", { id: "nightmodeStyle", rel: "stylesheet", href: chrome.extension.getURL("css/nightmode.css") }));
-    //remove previous stylesheets (timeout to prevent flicker)
-    setTimeout(function ()
-    {
-        oldStyles.remove();
-    }, 100);
-
-    var dynamicContentContainers = [
-        ".minithread",
-        "#postlist",
-        ".userprof",
-        ".titleshowt",
-        ".childforum",
-        "#left_block_1",
-        "#view-friends-content"
-    ];
-    utils.brightenBySelectors($(dynamicContentContainers.join(", ")), colorfulElementSelectors);
-
-    //custom background handler
-    if (settings.customBg.night.length > 0)
-    {
-        var bgStyle = "body { background: url('" + settings.customBg.night + "') #000 }";
-        addStyle(bgStyle, "customBg");
-    }
-
-    //change shortcut logo
-    $("#nightmodeShortcut").css({
-        "background-image": "url(" + chrome.extension.getURL("images/nightmode-on.svg") + ")"
-    }).attr("data-balloon", "כבה מצב לילה");
-
-    $("body").addClass("nightmodeActive");
-}
-
-//force disables night mode
-function disableNightmode()
-{
-    //remove previous stylesheets
-    $("style#customBg, link#nightmodeStyle").remove();
-
-    utils.reverseBrightening($("body"));
-
-    //custom background handler
-    if (settings.customBg.day.length > 0)
-    {
-        var bgStyle = "body { background: url('" + settings.customBg.day + "') }";
-        addStyle(bgStyle, "customBg");
-    }
-
-    //change shortcut logo
-    $("#nightmodeShortcut").css({
-        "background-image": "url(" + chrome.extension.getURL("images/nightmode-off.svg") + ")"
-    }).attr("data-balloon", "הפעל מצב לילה");
-
-    $("body").removeClass("nightmodeActive");
 }
 
 //returns the element's original css color even if it was brightened.
@@ -3523,27 +3391,11 @@ function eyesPopup()
         "watch?v=De4c9SkMNDA", "orangeTopPopup");
 }
 
-//replaces time strings (HH:MM) with time in seconds from midnight
-function timeInSeconds(timeStr)
-{
-    if (!timeStr)
-        return 0;
-    var parts = timeStr.split(":");
-    var hours = parseInt(parts[0]);
-    var minutes = parseInt(parts[1]);
-
-    return (hours * 60 * 60) + (minutes * 60);
-}
-
 //replaces time strings (HH:MM) with time in minutes from midnight
-function timeInMinutes(timeStr)
-{
-    if (!timeStr)
-        return 0;
-    var parts = timeStr.split(":");
-    var hours = parseInt(parts[0]);
-    var minutes = parseInt(parts[1]);
-
+function timeInMinutes(timeStr) {
+    if (!timeStr) return 0;
+	
+	const [hours, mins] = time.split(":");
     return hours * 60 + minutes;
 }
 
