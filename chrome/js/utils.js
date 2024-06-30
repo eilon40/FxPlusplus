@@ -119,15 +119,12 @@ var utils = function ()
     }
 
     //gets a users's id from a member.php?u=XXXXXXXXX address
-    function getUserIdFromLink(link)
-    {
-        if (!link)
-            return NaN;
-        var id = link.match(/u=[0-9]+/g); //match u=XXXX
-        if (id === null)
-            return NaN;
-        else
-            return parseInt(id[0].substr(2)); //remove u= and return
+    function getUserIdFromLink(link) {		
+		const id = (new URLSearchParams(link)).get('u');
+        if (id === null) {
+			return NaN;
+		}
+		return parseInt(id);
     }
 
     //returns notification objects for tracked threads
