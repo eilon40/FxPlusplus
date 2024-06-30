@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright 2015-2019 SilverTuxedo
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,19 +26,6 @@ chrome.storage.sync = (function ()
 
 var fxpDomain = "https://www.fxp.co.il/";
 
-//selectors for elements which can have special colors, used for nightmode
-var colorfulElementSelectors = [
-    "[color]",
-    "[style^='color:']",
-    "[style*=' color:']",
-    "[style*=';color:']",
-    ".talktext",
-    ".usertitle",
-    ".usertitle *",
-    ".username",
-    "#fxplusplus_custom_usernick"
-];
-
 //observer for the default subnick container, used for when the user is typing
 var typingObserver = new MutationObserver(function (mutations)
 {
@@ -58,26 +45,6 @@ var typingObserver = new MutationObserver(function (mutations)
     });
 });
 
-//observer for new content like PMs and the PM sidebar.
-var newContentObserver = new MutationObserver(function (mutations)
-{
-    mutations.forEach(function (mutation)
-    {
-        mutation.addedNodes.forEach(function (addedNode)
-        {
-            var addedEl = $(addedNode);
-            if (addedEl.hasClass("talk-bubble") || addedEl.hasClass("pm"))
-            {
-                //brighten new pm content if nightmode is active
-                if (localStorage.getItem("nightmodeEnabled") === "true")
-                {
-                    utils.brightenBySelectors(addedEl, colorfulElementSelectors);
-                }
-            }
-        });
-    });
-});
-
 //build an animated loading element
 var loadingElement = $("<div>", { class: "sk-cube-grid" });
 for (var i = 1; i <= 9; i++)
@@ -85,24 +52,6 @@ for (var i = 1; i <= 9; i++)
     loadingElement.append($("<div>", { class: "sk-cube sk-cube" + i }));
 }
 
-
-if (localStorage.getItem("nightmodeEnabled") === "true")
-{
-    var darkElement = document.createElement("div");
-    darkElement.setAttribute("style", "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background:black; z-index: 999999999999999;");
-    darkElement.setAttribute("id", "happyEyes");
-    darkElement.appendChild(loadingElement[0]);
-    document.documentElement.appendChild(document.importNode(darkElement, true));
-
-    $(document).ready(function ()
-    {
-        activateNightmode();
-        setTimeout(function ()
-        {
-            $("#happyEyes").fadeOut(100, function () { $(this).remove(); });
-        }, 200);
-    });
-}
 
 chrome.storage.sync.get("settings", function (data)
 {
