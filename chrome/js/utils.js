@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright 2015-2019 SilverTuxedo
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,12 +24,8 @@ var utils = function ()
     {
         chrome.cookies.get({ "url": domain, "name": name }, function (cookie)
         {
-            if (callback)
-            {
-                if (cookie === null)
-                    callback(null);
-                else
-                    callback(cookie.value);
+            if (callback) {
+				callback(cookie?.value || null);
             }
         });
     }
@@ -37,14 +33,9 @@ var utils = function ()
     //GET http function
     function httpGetAsync(theUrl, callback)
     {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.onreadystatechange = function ()
-        {
-            if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
-                callback(xmlHttp.responseText);
-        };
-        xmlHttp.open("GET", theUrl, true); // true for asynchronous 
-        xmlHttp.send(null);
+		fetch(theUrl)
+			.then(response => response.text())
+			.then(callback);
     }
 
     //get a user name from user ID
@@ -189,31 +180,22 @@ var utils = function ()
     //returns notifications from each kind, and total from FXP itself
     function getNotificationsNormal(callback)
     {
-        var noti = {
+        const noti = {
             pms: 0,
             likes: 0,
             notifications: 0,
-            total: function ()
-            {
-                return this.pms + this.likes + this.notifications;
-            }
+            total: function() {
+				return this.pms + this.likes + this.notifications;
+			}
         };
-        getDomainCookies(fxpDomain, "bb_livefxpext", function (id)
-        {
-            if (id !== null)
-                httpGetAsync(fxpDomain + "feed_live.php?userid=" + id + "&format=json", function (data)
-                {
-                    var notificationCount = JSON.parse(data);
+		httpGetAsync(fxpDomain + "feed_live.php", function (data) {
+			const notificationCount = JSON.parse(data);
+            noti.pms = parseInt(notificationCount.pm);
+			noti.likes = parseInt(notificationCount.like);
+			noti.notifications = parseInt(notificationCount.noti);
 
-                    noti.pms = parseInt(notificationCount.pm);
-                    noti.likes = parseInt(notificationCount.like);
-                    noti.notifications = parseInt(notificationCount.noti);
-
-                    console.log(noti.total() + " normal notifications");
-                    callback(noti);
-                });
-            else
-                callback(noti);
+            console.log(noti.total() + " normal notifications");
+			callback(noti);
         });
     }
 
@@ -272,96 +254,6 @@ var utils = function ()
         }
     }
 
-
-    //brightens all elements by selectors under the (jQuery) parent.
-    //SEARCH brightenGlobal
-    function brightenBySelectors(parent, elementSelectors)
-    {
-
-        var selector = elementSelectors.join(", ");
-
-        if (parent.is(selector))
-            brightenElement(parent);
-
-        parent.find(selector).each(function ()
-        {
-            brightenElement(this);
-        });
-
-    }
-
-    //changes a javascript DOM element's color to be bright enough behind black/dark backgrounds
-    function brightenElement(el)
-    {
-        var color = $(el).css("color");
-        var hex = convertRgbToHex(color);
-
-        //detect override
-        var hasColorParameterRegex = /(\s|;|^)color:/g;
-        var hasOldValue = hasColorParameterRegex.test($(el).attr("style"));
-
-        var brighter = getBrighterColor(hex, 150);
-        if (brighter !== hex)
-        {
-            $(el).attr("data-ogcolor", color);
-            if (hasOldValue) //if going to override, take note
-                $(el).attr("data-darkoverride", true);
-            $(el).css("color", brighter);
-        }
-    }
-
-    //restores brightened elements' original colors for the element and all its children
-    function reverseBrightening(parent)
-    {
-        if (parent.is("[data-ogcolor]"))
-            reverseBrighteningElement(parent);
-
-        parent.find("[data-ogcolor]").each(function ()
-        {
-            reverseBrighteningElement($(this));
-        });
-    }
-
-    //restores the element's original colors using its data-ogcolor tag
-    function reverseBrighteningElement(el)
-    {
-        if (el.attr("data-darkoverride"))
-        {
-            el.css("color", el.attr("data-ogcolor"));
-            el.removeAttr("data-darkoverride");
-        }
-        else
-            el.css("color", "");
-
-        el.removeAttr("data-ogcolor");
-    }
-
-    //gets a color and a minimum average brightness (0-255), and returns a color bright enough based on the original
-    function getBrighterColor(hexColor, minBrightness)
-    {
-        var color = hexColor.substr(1);
-        var rgb = parseInt(color, 16);
-
-        var r = (rgb >> 16) & 0xff;
-        var g = (rgb >> 8) & 0xff;
-        var b = (rgb >> 0) & 0xff;
-
-        var brightness = (r + g + b) / 3;
-        var diff = Math.round(minBrightness - brightness);
-
-        while (diff > 0)
-        {
-            r = Math.min(r + diff, 255);
-            g = Math.min(g + diff, 255);
-            b = Math.min(b + diff, 255);
-
-            brightness = (r + g + b) / 3;
-            diff = Math.round(minBrightness - brightness);
-        }
-
-        var brightHex = "#" + r.toString(16) + g.toString(16) + b.toString(16);
-        return brightHex;
-    }
 
     //convert RGB color format to hexadecimal color format (X,X,X > #XXXXXX)
     function convertRgbToHex(rgb)
@@ -446,27 +338,22 @@ var utils = function ()
     }
 
     return {
-        getDomainCookies: getDomainCookies,
-        httpGetAsync: httpGetAsync,
-        getUserNameById: getUserNameById,
-        getUserIdByName: getUserIdByName,
-        getUserIdFromLink: getUserIdFromLink,
+        getDomainCookies,
+        httpGetAsync,
+        getUserNameById,
+        getUserIdByName,
+        getUserIdFromLink,
 
-        getNotificationsTrackedThreads: getNotificationsTrackedThreads,
-        getNotificationsNormal: getNotificationsNormal,
-        getNotificationsTotalNum: getNotificationsTotalNum,
+        getNotificationsTrackedThreads,
+        getNotificationsNormal,
+        getNotificationsTotalNum,
 
-        getDeepestChild: getDeepestChild,
-        setSubnickContainer: setSubnickContainer,
-        brightenBySelectors: brightenBySelectors,
-        brightenElement: brightenElement,
-        reverseBrightening: reverseBrightening,
-        reverseBrighteningElement: reverseBrighteningElement,
-        getBrighterColor: getBrighterColor,
-        convertRgbToHex: convertRgbToHex,
+        getDeepestChild,
+        setSubnickContainer,
+        convertRgbToHex,
 
-        buildStyleWrapper: buildStyleWrapper,
-        deepWrap: deepWrap,
-        fixCaret: fixCaret
+        buildStyleWrapper,
+        deepWrap,
+        fixCaret
     };
 }();
