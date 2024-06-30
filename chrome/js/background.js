@@ -27,7 +27,6 @@ var factorySettings =
     showSpoilers: true,
     hideSuggested: false,
     classicIcons: false,
-    nightmodeShortcut: true,
     showForumStats: true,
     hideAccessibilityMenu: false,
     disableLiveTyping: false,
@@ -118,7 +117,7 @@ chrome.storage.sync.get("settings", function (data)
 {
     var settings;
     if (data)
-        settings = data.settings || {};
+        settings = data?.settings || {};
     else
         settings = {};
 
@@ -246,6 +245,31 @@ chrome.runtime.onMessage.addListener(
         {
             sendEvent(request.event.cat, request.event.type);
         }
+		
+		if (request.value) {
+						  // chrome.cookies.remove({
+				// url:  "www.fxp.co.il",
+				// name: "bb_darkmode",
+			// }, function (removedCookie) {
+				// console.log('removedCookie:', removedCookie); //<=== Why do I get an empty value here? 
+			// });
+
+			  const cookieData = {
+				url: "https://www.fxp.co.il",
+				name: "bb_darkmode",
+				value: request.value,
+				expirationDate: (new Date().getTime()/1000) + 3600
+
+			  };
+
+			  // chrome.cookies.onChanged.addListener(
+  // callback: function,
+// )
+
+			  chrome.cookies.set(cookieData, function (cookie) {
+				  console.log('set', cookie);
+			  });
+		}
     });
 
 
