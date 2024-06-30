@@ -61,7 +61,6 @@ showTip(true);
 
 var forumCompleteCooldown; //cooldown object for inputs of forum names
 
-$('.clockpicker').clockpicker();
 
 //get all the settings
 var settings;
