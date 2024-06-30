@@ -23,7 +23,6 @@
     <link href="../fonts/extra_fonts.css" rel="stylesheet" />
     <link href="../fonts/materialdesignicons.css" rel="stylesheet" />
     <link href="../css/settings.css" rel="stylesheet" />
-    <link href="../css/jquery-clockpicker.css" rel="stylesheet" />
     <link href="../css/balloon.css" rel="stylesheet" />
 </head>
 <body>
@@ -255,21 +254,12 @@
                     </div>
 
                     <div class="setOption">
-                        <div class="optionToggle"><div class="switch"><input type="checkbox" id="nightShortcut" /><label for="nightShortcut"></label></div></div>
-                        <div class="optionName">
-                            הצג קיצור דרך למצב לילה
-                        </div>
-                        <div class="optionExplain">
-                            בצד הימני העליון של המסך יופיע קיצור דרך למצב הלילה.
-                        </div>
-                    </div>
-                    <div class="setOption">
                         <div class="optionToggle"><div class="switch"><input type="checkbox" id="autoNight" /><label for="autoNight"></label></div></div>
                         <div class="optionName">
                             הפעל את מצב הלילה אוטומטית משעה
-                            <input type="text" id="nightStartTime" class="clockpicker" value="17:05" />
+                            <input type="time" id="nightStartTime" value="17:05" />
                             עד שעה
-                            <input type="text" id="nightEndTime" class="clockpicker" value="23:30" />
+                            <input type="time" id="nightEndTime" value="23:30" />
                         </div>
                         <div class="optionExplain">
                             מצב הלילה יפעל בשעות שנבחרו באופן אוטומטי. ניתן להפעיל ולכבות ידנית את מצב הלילה גם כאשר תכונה זו פועלת.
@@ -644,7 +634,6 @@
     </div>
 
     <script src="../js/jquery.min.js"></script>
-    <script src="../js/jquery-clockpicker.js"></script>
     <script src="../js/utils.js"></script>
     <script src="../js/md5.js"></script>
     <script src="../js/settings.js"></script>
