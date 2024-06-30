@@ -1216,48 +1216,33 @@ chrome.storage.sync.get("settings", function (data)
                 observers.insideEditor.observe($(".chat-text-input .send-element div#input-textarea")[0], { childList: true });
         }
 
-        //shortcut to toggle night mode
-        if (settings.autoNightmode.active)
-        {
+
+
+        if (settings.autoNightmode.active) {
             debug.info("autoNightmode is enabled");
-            var lastChange = localStorage.getItem("lastAutoNightChange");
+			const lastChange = localStorage.getItem("lastAutoNightChange");
+			const now = new Date();
+			const minutesCurrent = now.getHours() * 60 + now.getMinutes();
 
-            var rangeActive = false;
-            var minutesStart = timeInMinutes(settings.autoNightmode.start);
-            var minutesEnd = timeInMinutes(settings.autoNightmode.end);
+            let rangeActive = false;
+            const minutesStart = timeInMinutes(settings.autoNightmode.start);
+            const minutesEnd = timeInMinutes(settings.autoNightmode.end);
+			
+			if (minutesEnd < minutesStart) {
+				rangeActive = minutesStart <= minutesCurrent || minutesCurrent < minutesEnd;
+			} else {
+				rangeActive = minutesCurrent >= minutesStart && minutesCurrent < minutesEnd;
+			}
 
-            var d = new Date();
-            //get the current time in minutes since midnight
-            var minutesCurrent = d.getHours() * 60 + d.getMinutes();
-
-            //check if the current time is in range
-            if (minutesEnd < minutesStart) //time overflows to next day
-                rangeActive = minutesStart <= minutesCurrent || minutesCurrent < minutesEnd;
-            else
-                rangeActive = minutesCurrent <= minutesCurrent && minutesCurrent < minutesEnd;
-
-            if (lastChange === "night") //was changed to night last change
-            {
-                if (!rangeActive) //no longer night time
-                {
-					console.log('s1')
-					toggleDarkMode();
-                    localStorage.setItem("nightmodeEnabled", false);
-                    //disableNightmode();
-                    localStorage.setItem("lastAutoNightChange", "day");
-                }
-            }
-            else //was changed to day last change
-            {
-                if (rangeActive) //it is night time
-                {
-					console.log('s2');
-					toggleDarkMode();
-                    localStorage.setItem("nightmodeEnabled", true);
-                    // activateNightmode();
-                    localStorage.setItem("lastAutoNightChange", "night");
-                }
-            }
+			if (lastChange === "night" && !rangeActive) {
+				toggleDarkMode(); //false
+				localStorage.setItem("nightmodeEnabled", false);
+				localStorage.setItem("lastAutoNightChange", "day");
+			} else if (rangeActive) {
+				toggleDarkMode(); //true
+				localStorage.setItem("nightmodeEnabled", true);
+				localStorage.setItem("lastAutoNightChange", "night");
+			}
         }
 
         //hide typing from other users
@@ -1276,7 +1261,7 @@ chrome.storage.sync.get("settings", function (data)
                 $("<div>").text(" שתף את הכיף!™ והוסף קרדיט לתוסף +FxPlus בחתימה שלך:")
             ).append(
                 $("<div>", { class: "addCreditBtn", id: "addLimg" }).append(
-                    $("<img>", { src: "http://i.imgur.com/bsVtJ5o.png" })
+                    $("<img>", { src: "https://i.imgur.com/bsVtJ5o.png" })
                 ).append(
                     $("<span>", { class: "addCreditDesc" }).text("128x128")
                 ).click(function ()
@@ -1289,7 +1274,7 @@ chrome.storage.sync.get("settings", function (data)
                 })
             ).append(
                 $("<div>", { class: "addCreditBtn", id: "addMimg" }).append(
-                    $("<img>", { src: "http://i.imgur.com/O7FsbY8.png" })
+                    $("<img>", { src: "https://i.imgur.com/O7FsbY8.png" })
                 ).append(
                     $("<span>", { class: "addCreditDesc" }).text("48x48")
                 ).click(function ()
@@ -1318,40 +1303,37 @@ chrome.storage.sync.get("settings", function (data)
         //custom user notes
         chrome.storage.local.get("userNotes", function (data)
         {
-            var notes = data.userNotes || defaultNotes;
-            if (window.location.href.indexOf("member.php") > -1) //on a user's page
-            {
-                var currentProfileId = getUserIdInProfile();
+            const notes = data.userNotes || defaultNotes;
+            if (location.pathname == "/member.php") {
+
+                const currentProfileId = document.querySelector('.follow-btn').getAttribute('data-followid');
 
                 //add tab
-                var tabParent = $("#userprof_content_container .tabslight");
-                var notesTab = tabParent.find(".userprof_module:first").clone();
-                notesTab.attr("class", "userprof_moduleinactive");
-                notesTab.find("a")
-                    .attr("id", "usernotes-tab")
-                    .removeAttr("href")
-                    .removeAttr("onclick")
-                    .text("הערות");
+				const tabParent = document.querySelector("#userprof_content_container .tabslight");
+                const notesTab = tabParent.querySelector(".userprof_module").cloneNode();
+				notesTab.setAttribute("class", "userprof_moduleinactive");
+				const element = notesTab.querySelector("a");
+				element.setAttribute("id", "usernotes-tab");
+                element.removeAttribute("href");
+                element.removeAttribute("onclick");
+				element.innerText = "הערות";
 
-                //show the notes tab and hide other tabs when clicked
-                notesTab.click(function ()
-                {
-                    $(".selected_view_section").attr("class", "view_section");
-                    $("#view-usernotes-content").attr("class", "selected_view_section");
-
-                    $(".userprof_module").attr("class", "userprof_moduleinactive");
-                    $(this).attr("class", "userprof_module");
-                });
+                notesTab.addEventListener("click", function() {
+					document.querySelector(".selected_view_section").setAttribute("class", "view_section");
+                    document.querySelector("#view-usernotes-content").setAttribute("class", "selected_view_section");
+                    document.querySelector(".userprof_module").setAttribute("class", "userprof_moduleinactive");
+					this.target.setAttribute("class", "userprof_module");
+				})
 
                 //make a click on another tab hide the notes tab
-                tabParent.find("dd a").click(function ()
-                {
-                    notesTab.attr("class", "userprof_moduleinactive");
+                tabParent.querySelectorAll("dd a").forEach(function {
+					notesTab.setAttribute("class", "userprof_moduleinactive");
                     $("#view-usernotes-content").attr("class", "view_section");
-                });
+				})
+         
 
                 //add the notes tab to the list
-                notesTab.appendTo(tabParent);
+				tabParent.appendChild(notesTab);
 
                 //add tab content
                 $("#userprof_content_container .profile_content.userprof").append(
@@ -1737,22 +1719,19 @@ function resizeSignature(j_signatureElement)
 //get the number of days since the thread was commented in (at least 3)
 function getDaysSinceComment(threadlistItem)
 {
-    var dateElement = threadlistItem.find(".threadlastpost").find("dd:eq(1)"); //finds the element in which the date is in
-    var date = dateElement.text().match(/[0-9]{2}-[0-9]{2}-[0-9]{4}/g); //get the date from structure DD-MM-YYYY
-    if (date === null)
-        return 3;
-    else
-    {
-        date = date[0].split("-"); //split to day, month, and year
-        var nowDate = new Date(); //get the date right now
-        var daysSince = 0;
-        daysSince += nowDate.getDate() - date[0]; //calculate days difference
-        daysSince += (nowDate.getMonth() + 1 - date[1]) * 30; //calculate months difference
-        daysSince += (nowDate.getFullYear() - date[2]) * 365; //calculate years difference
+    const dateElement = document.querySelector('.threadlastpost dd:nth-child(3)')
+	const date = dateElement?.textContent.split(" ").shift()
+    if (!date) return 3;
+	const [days, months, years] = date.split("-");
+    const nowDate = new Date();
+	let daysSince = 0;
+    daysSince += nowDate.getDate() - days; 
+	daysSince += (nowDate.getMonth() + 1 - months) * 30; 
+	daysSince += (nowDate.getFullYear() - years) * 365;
 
-        return daysSince;
-    }
+	return daysSince;
 }
+
 
 //returns the most frequent entry/entries in the array in array form
 function mostFrequent(arr)
@@ -2228,7 +2207,7 @@ function getThreadIdFromLink(link)
 //returns the id of the user who uses the extension
 function getMyUserId()
 {
-    return utils.getUserIdFromLink($(".logedintop .log_in6 a").attr("href"));
+    return utils.getUserIdFromLink(document.querySelector(".log_in6 a").herf);
 }
 
 //gets the number of comments of a threadbit element
@@ -3110,14 +3089,6 @@ function getNoteByUserId(id, callback)
 
 }
 
-//returns the id from the viewed profile. only works on member.php pages
-function getUserIdInProfile()
-{
-    var userLinkElement = $("a[href*='userid='"); //look for a URL with the user's id
-    var idStr = userLinkElement.attr("href").match(/userid=[0-9]+/g)[0].substr("userid=".length); //extract the ID from the url
-    return parseInt(idStr);
-}
-
 //fixes the ordering of minithreads so each minithread appears below its parent
 function fixMinithreadOrdring()
 {
@@ -3392,8 +3363,12 @@ function eyesPopup()
 }
 
 //replaces time strings (HH:MM) with time in minutes from midnight
-function timeInMinutes(timeStr) {
-    if (!timeStr) return 0;
+function timeInMinutes(timeString) {
+    if (!timeString) return 0;
+	const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+};
+
 	
 	const [hours, mins] = time.split(":");
     return hours * 60 + minutes;
