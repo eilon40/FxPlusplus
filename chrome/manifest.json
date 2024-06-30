@@ -1,4 +1,4 @@
-﻿{
+{
   "manifest_version": 2,
   "name": "FxPlus+ for Chrome",
   "short_name": "FxPlus+",
@@ -48,20 +48,11 @@
       "css": [ "css/balloon.css", "css/main_fxp.css" ],
       "run_at": "document_start",
       "all_frames": true
-    },
-    {
-      "matches": [ "https://www.fxp.co.il/forumdisplay.php*&web_fast_fxp=1" ],
-      "js": [ "js/jquery.min.js", "js/iframes_fxp.js" ],
-      "run_at": "document_start",
-      "all_frames": true
     }
   ],
 
   "web_accessible_resources": [
     "html/settings.html",
-    "css/nightmode.css",
-    "css/private_chat_nightmode.css",
-    "css/iframes_nightmode.css",
     "images/*",
     "fonts/*",
     "js/disable_typing.js"
