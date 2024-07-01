@@ -16,11 +16,20 @@
  */
 
 "use strict";
+//todo אימות איש צוות לכלים
 //todo add friends icon https://w7.pngwing.com/pngs/236/25/png-transparent-computer-icons-avatar-friends-love-text-logo-thumbnail.png
 var versionDescription = "תיקונים ושיפורים כלליים.";
 var versionBig = false;
 var versionHref = "https://fxplusplus.blogspot.com/2019/11/155.html";
-
+const defaultNotes = [{
+        id: 967488,
+        content: "רק דברים טובים"
+    },
+    {
+        id: 30976,
+        content: "אושיית רשת וזוכת האירוויזיון עם השיר המקורי מיוטיוב: מור הראפרית FXP"
+    }
+];
 //if sync storage not supported, fallback to local.
 chrome.storage.sync = (function ()
 {
@@ -41,8 +50,8 @@ var debug = {
     print: function (msg) { }
 };
 
-if (localStorage.getItem("fxplusplus_debugging")) //debug functions only output when enabled
-{
+// if (localStorage.getItem("fxplusplus_debugging")) //debug functions only output when enabled
+// {
     debug = {
         big: function (msg)
         {
@@ -69,7 +78,7 @@ if (localStorage.getItem("fxplusplus_debugging")) //debug functions only output 
             console.log(msg);
         }
     };
-}
+// }
 
 var fxpDomain = "https://www.fxp.co.il/";
 
@@ -82,7 +91,7 @@ var regex = {
 var readTimeSpeed = 220;
 
 
-var classicIconsDict = [
+const classicIconsDict = [
     { old: "https://static.fcdn.co.il/smilies3/205_40x.png", new: "images/old_icons/angel.png", width: 74, height: 30 },
     { old: "https://static.fcdn.co.il/smilies3/173_40x.png", new: "images/old_icons/devil.png", width: 18, height: 23 },
     { old: "https://static.fcdn.co.il/smilies3/202_40x.png", new: "images/old_icons/kiss.png", width: 19, height: 19 },
@@ -97,17 +106,17 @@ var classicIconsDict = [
 ];
 
 //build an animated loading element
-var loadingElement = $("<div>", { class: "sk-cube-grid" });
-for (var i = 1; i <= 9; i++)
-{
-    loadingElement.append($("<div>", { class: ("sk-cube sk-cube" + i) }));
+const loadingElement = document.createElement("div");
+loadingElement.classList.add("sk-cube-grid");
+
+for (let i = 1; i <= 9; i++) {
+  const cube = document.createElement("div");
+  cube.classList.add("sk-cube", "sk-cube" + i);
+  loadingElement.appendChild(cube);
 }
 
-//default user profile notes
-var defaultNotes = [
-    { id: 967488, content: "רק דברים טובים" },
-    { id: 30976, content: "אושיית רשת וזוכת האירוויזיון עם השיר המקורי מיוטיוב: מור הראפרית FXP" } //it's epic.
-];
+
+
 
 //id:username pairs that are known
 var globalKnownIds = {};
@@ -130,7 +139,6 @@ chrome.storage.sync.get("settings", function (data)
    
    readTimeSpeed = settings.readtime.speed;
 
-    //add custom background
 	//todo add with fxp dark mode
     if (localStorage.getItem("nightmodeEnabled") == "true")
     {
@@ -150,7 +158,7 @@ chrome.storage.sync.get("settings", function (data)
     if (settings.hideSuggested)
     {
         debug.info("hideSuggested is enabled");
-        var suggestedContentSelectors = [
+        const suggestedContentSelectors = [
             "#related_main",
             ".trc_related_container",
             ".trc_spotlight_widget",
@@ -172,24 +180,25 @@ chrome.storage.sync.get("settings", function (data)
     {
         addStyle(".nagish-button { display: none; }");
     }
-
-	if (settings.connectedStaff && location.pathname === '/forumdisplay.php') {
-		//todo: temp
-		window.onload = function() {
-		document.querySelectorAll('.flo .username').forEach(user => {
-			console.log(user);
-			const promise = fetch(user.href).then(response => response.text())
-			promise.then(function(data) {
-				console.log('first:'+ user.innerText)
-
-				if (!data.includes(user.innerText + ' מחובר/ת')) return;
-				console.log(user.innerText)
-					user.innerHTML += '<svg width="10px" height="10px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#00FF00" d="m2 12a10 10 0 1 1 10 10 10 10 0 0 1 -10-10z"/></svg>';
+	function elementReady(selector) {
+		return new Promise(function (resolve, reject) {
+			const element = document.querySelector(selector)
+			if (document.contains(element)) {
+				return resolve(element);
+			}
+			new MutationObserver(function (mutations, observer) {
+				const node = document.querySelector(selector)
+				if (document.contains(node)) {
+					observer.disconnect();
+					resolve(node);
+				}
 			})
-		})
-		}
+				.observe(document.documentElement, {
+				childList: true,
+				subtree: true
+			});
+		});
 	}
-
 	const top = window.parent.top
 	console.log(top.location.pathname);
 	if (top != window && top.location.pathname == '/middleware') {
@@ -202,16 +211,21 @@ chrome.storage.sync.get("settings", function (data)
 		// `);
 	}
 
-    $(document).ready(function ()
-    { //DOM is ready for manipulation
+    $(document).ready(function () {
         debug.info("Page ready");
 
         var beginDate = new Date();
 
-
-
-        //add helper for night mode to determine where the personal category is
-        $(".fav_div").parent().addClass("personalCategoryHelper");
+		if (settings.connectedStaff && location.pathname === '/forumdisplay.php') {
+			document.querySelectorAll('.flo .username').forEach(user => {
+				const promise = fetch(user.href).then(response => response.text())
+				promise.then(function(data) {
+					if (!data.includes(user.innerText + ' מחובר/ת')) return;
+					console.log(user.innerText)
+						user.innerHTML += '<svg width="10px" height="10px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#00FF00" d="m2 12a10 10 0 1 1 10 10 10 10 0 0 1 -10-10z"/></svg>';
+				})
+			})
+		}
 
         //add settings button in FxP toolbar
         $("#settings_pop .popupbody").append($("<div>", { class: "fxpSpopupSeperator" })) //add seperator
@@ -295,6 +309,268 @@ chrome.storage.sync.get("settings", function (data)
             });
         }
 
+chrome.storage.local.get("userNotes", function(data) {
+    const notes = data.userNotes || defaultNotes;
+    if (location.pathname == "/member.php") {
+
+        const currentProfileId = document.querySelector('.usermenu a').href.split("=").pop()
+
+        //add tab
+        const tabParent = document.querySelector("#userprof_content_container .tabslight");
+        const notesTab = tabParent.querySelector(".userprof_module").cloneNode(true);
+        notesTab.setAttribute("class", "userprof_moduleinactive");
+        const element = notesTab.querySelector("a");
+        element.id = "usernotes-tab";
+        element.removeAttribute("href");
+        element.removeAttribute("onclick");
+        element.innerText = "הערות";
+
+        notesTab.addEventListener("click", function(event) {
+			document.querySelectorAll(".selected_view_section").forEach(element => element.classList.replace("selected_view_section", "view_section"));
+			document.getElementById("view-usernotes-content").classList.add("selected_view_section");
+			document.querySelectorAll(".userprof_module").forEach(element => element.classList.add("userprof_moduleinactive"));
+			event.target.setAttribute("class", "userprof_module");
+        })
+
+        //make a click on another tab hide the notes tab
+        tabParent.querySelectorAll("dd a").forEach(function() {
+            notesTab.setAttribute("class", "userprof_moduleinactive");
+            $("#view-usernotes-content").attr("class", "view_section");
+        })
+
+
+        //add the notes tab to the list
+        tabParent.appendChild(notesTab);
+
+        //add tab content
+        $("#userprof_content_container .profile_content.userprof").append(
+            $("<div>", {
+                id: "view-usernotes-content",
+                class: "view_section"
+            }).append(
+                $("<h4>", {
+                    class: "subsectionhead userprof_title"
+                }).text("הערות")
+            ).append(
+                $("<textarea>", {
+                    class: "userNotesEditor",
+                    "data-user": currentProfileId
+                }).on('input selectionchange propertychange', function() {
+                    userNotesEditorSaveChanges($(this), parseInt($(this).attr("data-user")));
+                }).each(function() {
+                    //set the content to the user's note
+                    var editor = $(this);
+                    getNoteByUserId(currentProfileId, function(noteText) {
+                        editor.val(noteText);
+                    });
+                })
+            ).append(
+                $("<span>").text("הערות שיכתבו כאן ישמרו אוטומטית, ורק עבור דפדפן זה.")
+            ).append(
+                $("<br>")
+            ).append(
+                $("<div>", {
+                    class: "niceButton inlineBtn grayBtn"
+                }).text("שמור את כל ההערות כקובץ").click(function() {
+                    chrome.storage.local.get("userNotes", function(data) {
+                        var notesObj = data.userNotes || [];
+                        exportAsJsonFile(notesObj, "fxplusplus-notes");
+                    });
+                    chrome.runtime.sendMessage({
+                        event: {
+                            cat: "Click",
+                            type: "DownloadNotes"
+                        }
+                    });
+                })
+            ).append(
+                $("<div>", {
+                    class: "niceButton inlineBtn grayBtn"
+                }).text("טען הערות מקובץ").click(openLoadNotes)
+            )
+        );
+    }
+});
+
+
+//opens a popup that allows the user to load their notes from storage
+function openLoadNotes() {
+    var content = $("<div>");
+    content.append(
+        $("<span>").text("באפשרותך לטעון קובץ הערות ששמרת בעבר דרך התוסף. ")
+    ).append(
+        $("<b>").text("בטעינת קובץ הערות, כל ההערות הקיימות שלך ימחקו.")
+    ).append(
+        $("<div>").append(
+            $("<input>", {
+                type: "file",
+                accept: ".json",
+                id: "notes-file-input",
+                style: "display: none"
+            }).change(function(event) {
+                importNotesFromJsonInput(event, function(status) {
+                    $("#notes-status").attr("class", status.success ? "success" : "failure").text(status.info);
+
+                    //update the editor if the notes were changed
+                    if (status.success) {
+                        updateNoteTextContainers();
+                        chrome.runtime.sendMessage({
+                            event: {
+                                cat: "Click",
+                                type: "UploadNotes"
+                            }
+                        });
+                    }
+                });
+            })
+        ).append(
+            $("<label>", {
+                for: "notes-file-input"
+            }).append(
+                $("<div>", {
+                    class: "niceButton blueBtn"
+                }).text("בחר קובץ")
+            )
+        ).append(
+            $("<div>", {
+                id: "notes-status"
+            })
+        )
+    );
+    var imgUrl = chrome.extension.getURL("images/archive.svg");
+    openPopupWindow("load_notes_popup", imgUrl, "טען הערות מקובץ", content);
+}
+
+//exports an object as a JSON file
+function exportAsJsonFile(obj, filename) {
+    var JsonString = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj));
+    var link = document.createElement("a");
+    link.setAttribute("href", JsonString);
+    link.setAttribute("download", filename + ".json");
+    document.body.appendChild(link); // firefox requirement
+    link.click(); // downloads the data
+}
+
+//binds to a file input. When the input is changed, the file is read and its notes are saved.
+function importNotesFromJsonInput(event, callback) {
+    var input = event.target;
+
+    var reader = new FileReader();
+    var notesObj; //object that contains the notes in the file
+    var success = true;
+    var addedInfo = "";
+    reader.onload = function() {
+        try {
+            var data = reader.result;
+            notesObj = JSON.parse(data);
+        } catch (e) {
+            success = false;
+            if (e instanceof SyntaxError)
+                addedInfo = "לא היה ניתן לפענח את תוכן הקובץ. ייתכן שזה אינו קובץ שנוצר על ידי התוסף או שהקובץ ניזוק.";
+            else
+                addedInfo = "אירעה שגיאה: " + e;
+        }
+
+        if (success)
+            if (verifyNotesObject(notesObj)) //verify that the object contains notes
+        {
+            //override the old notes
+            chrome.storage.local.set({
+                "userNotes": notesObj
+            }, function() {
+                addedInfo = "ההערות החדשות נשמרו.";
+                callback({
+                    success: success,
+                    info: addedInfo
+                });
+            });
+        } else {
+            success = false;
+            addedInfo = "הקובץ שבחרת אינו קובץ הערות שנוצר על ידי התוסף.";
+            callback({
+                success: success,
+                info: addedInfo
+            });
+        } else
+            callback({
+                success: success,
+                info: addedInfo
+            });
+    };
+    if (input.files.length > 0)
+        reader.readAsText(input.files[0]);
+    else
+        callback({
+            success: false,
+            info: "לא בחרת קובץ."
+        });
+}
+
+//returns true if the object is a valid notes object
+function verifyNotesObject(notesObj) {
+    if (!(notesObj instanceof Array)) //notes should be an array
+        return false;
+
+    var note;
+    for (var i = 0; i < notesObj.length; i++) {
+        note = notesObj[i];
+        //all notes should have id and content
+        if (!(note.hasOwnProperty("id") && note.hasOwnProperty("content")))
+            return false;
+    }
+
+    return true;
+}
+//locates user note containers and updates them according to their assigned user id
+function updateNoteTextContainers() {
+    $(".userNotesEditor").each(function() {
+        var editor = $(this);
+        var userId = parseInt($(this).attr("data-user"));
+        getNoteByUserId(userId, function(noteText) {
+            editor.val(noteText);
+        });
+    });
+}
+
+var saveNotesTimeout;
+//saves the changes made in the notes'
+function userNotesEditorSaveChanges(editor, id) {
+    if (saveNotesTimeout) window.clearTimeout(saveNotesTimeout);
+    //debounce of 0.8secs for the saving
+    saveNotesTimeout = setTimeout(function() {
+        //always use the latest and greatest notes
+        chrome.storage.local.get("userNotes", function(data) {
+            var notes = data.userNotes || defaultNotes;
+            for (var i = 0; i < notes.length; i++) {
+                if (notes[i].id == id) //remove dupes
+                {
+                    debug.print("removing:");
+                    debug.print(notes[i]);
+                    notes.splice(i, 1);
+                    break;
+                }
+            }
+            //add the note to the beginning of the note list
+            notes.unshift({
+                id: id,
+                content: editor.val()
+            });
+            chrome.storage.local.set({
+                "userNotes": notes
+            }, function() {
+                debug.info("saved note");
+            }); //save
+        });
+    }, 800);
+}
+//returns the text of a note for a user
+function getNoteByUserId(id, callback) {
+    chrome.storage.local.get("userNotes", function(data) {
+        const notes = data.userNotes || defaultNotes;
+		const foundNote = notes.filter(note => note.id == id).shift();
+		callback(foundNote?.content || "");
+    });
+}
         //there are threads in the page
         if ($("#threads").length > 0)
         {
@@ -337,12 +613,8 @@ chrome.storage.sync.get("settings", function (data)
 
                 //PUBLISHERS
 
-                var publishers = []; //array of all posters that posted in the forum
-                $("#threads .threadinfo .username").each(function ()
-                {
-                    publishers.push($(this).text());
-                });
-
+                var publishers = [...document.querySelectorAll("#threads .threadinfo .username")].map(el => el.innerText);
+        
                 var publishersDict = getDupeSortedDictionary(publishers);
 
                 line = $("<div>");
@@ -366,12 +638,7 @@ chrome.storage.sync.get("settings", function (data)
 
                 //COMMENTORS
 
-                var commentors = []; //array of all commentors that last posted in threads
-                $("#threads .threadlastpost .username").each(function ()
-                {
-                    commentors.push($(this).text());
-                });
-
+                const commentors = [...document.querySelectorAll("#threads .threadlastpost .username")].map(el => el.innerText);
                 var commentorsDict = getDupeSortedDictionary(commentors);
 
                 line = $("<div>");
@@ -609,6 +876,16 @@ chrome.storage.sync.get("settings", function (data)
 
 
             //peek binding for new threads
+			document.addEventListener("click", function(event) {
+				const element = event.target;
+				const p = element.closest('.threadbit');
+
+				if (element.classList.contains("threadstatus") && !p.classList.contains("minithread")) {
+					peekToThread(element, settings.peekCloseMethod)
+				}
+
+			})
+               //peek binding for new threads
             observers.threadsList = new MutationObserver(function (mutations)
             {
                 mutations.forEach(function (mutation)
@@ -617,12 +894,7 @@ chrome.storage.sync.get("settings", function (data)
                     {
                         var addedThread = $(mutation.addedNodes[0]);
                         if (addedThread.hasClass("threadbit") && !(addedThread.hasClass("minithread")))
-                        { //it's a new thread
-                            addedThread.find(".threadstatus").click(function ()
-                            { //peek on envelope click
-                                peekToThread($(this), settings.peekCloseMethod)
-                            });
-
+                        { 
                             if (settings.trackUnreadComments) //check if new comments in the added thread
                             {
                                 checkNewComments(addedThread);
@@ -653,6 +925,8 @@ chrome.storage.sync.get("settings", function (data)
             });
             //track when new threads appear in the threadlist
             observers.threadsList.observe($("#threads")[0], { childList: true });
+        // }
+          
         }
 
         //there are comments in the page
@@ -714,12 +988,6 @@ chrome.storage.sync.get("settings", function (data)
                     }
             });
         }
-
-        //bind all envelopes to peek
-        $(".threadstatus, .threadicon").click(function ()
-        {
-            peekToThread($(this), settings.peekCloseMethod);
-        });
 
         //bind all titles to track comment count when clicked, and check state of loaded threads
         if (settings.trackUnreadComments)
@@ -1105,9 +1373,9 @@ chrome.storage.sync.get("settings", function (data)
         if (settings.customDefaultStyle.active)
         {
             var noFontsPage = //true if the page's editor does not allow fonts
-                window.location.href.indexOf("member.php") > -1 ||
-                window.location.href.indexOf("converse.php") > -1 ||
-                window.location.href.indexOf("visitormessage.php") > -1;
+                location.href.indexOf("member.php") > -1 ||
+                location.href.indexOf("converse.php") > -1 ||
+                location.href.indexOf("visitormessage.php") > -1;
 
             styleWrapper = utils.buildStyleWrapper(settings.customDefaultStyle, noFontsPage, false);
         }
@@ -1131,9 +1399,8 @@ chrome.storage.sync.get("settings", function (data)
                         //new text node, wrap with the style
                         if (styleWrapper)
                         {
-                            var wrapperElement = styleWrapper.clone()[0];
+                            const wrapperElement = styleWrapper.cloneNode(true);
                             utils.deepWrap(newNode, wrapperElement);
-                            utils.fixCaret(newNode); //move the caret to the end of the text element
                             debug.info("editor style applied");
                         }
                     }
@@ -1142,69 +1409,27 @@ chrome.storage.sync.get("settings", function (data)
         });
 
         //mutation to track when the iframe editor is added
-        observers.texteditor = new MutationObserver(function (mutations)
-        {
-            mutations.forEach(function (mutation)
-            {
-                if (mutation.addedNodes.length > 0)
-                    if (settings.customDefaultStyle.active && shouldStyle || settings.classicIcons)
-                    {
-                        var addedJ = $(mutation.addedNodes[0]);
-                        if (addedJ.parents(".cke_contents").length > 0 && mutation.addedNodes[0].tagName === "IFRAME") //editor iframe added
-                        {
-                            debug.info("binding to new editor div");
-                            var editorFrame = addedJ;
-                            var qtnts = editorFrame.contents();
-
-                            //bind observer for new children (text)
-                            if (qtnts.length > 0) //the contents are available, iframe loaded
-                            {
-                                setTimeout(function () //give things a chance to load (looking at you, firefox.)
-                                {
-                                    if (editorFrame.contents().find("body.forum, body.content").length > 0)
-                                    {
-                                        if (settings.customDefaultStyle.active && shouldStyle)
-                                        {
-                                            observers.insideEditor.observe(editorFrame.contents().find("body.forum, body.content")[0], { childList: true });
-                                        }
-                                        if (settings.classicIcons)
-                                        {
-                                            addStyle(buildOldIconsStylesheet(), "oldIcons", editorFrame.contents().find("head")[0]);
-                                        }
-                                    }
-                                    else
-                                        bindEditorFrameLoad(editorFrame, settings);
-                                }, 100);
-                            }
-                            else //iframe not loaded yet
-                                bindEditorFrameLoad(editorFrame, settings);
+		elementReady('.cke_contents > iframe')
+			.then(element => {
+				if (settings.customDefaultStyle.active && shouldStyle || settings.classicIcons) {
+					debug.info("binding to new editor div");
+					const editorFrame = element.contentDocument;
+					if (editorFrame && editorFrame.querySelector("body.forum, body.content")) {
+						if (settings.customDefaultStyle.active && shouldStyle) {
+							observers.insideEditor.observe(editorFrame.querySelector("body.forum, body.content"), { childList: true });
                         }
-                    }
-            });
-        });
+                        if (settings.classicIcons) {
+							addStyle(buildOldIconsStylesheet(), "oldIcons", editorFrame.querySelector("head"));	
+						}
+					}
 
-        if ($(".cke_contents iframe").length > 0) //iframe is accessible, observer won't catch it
-        {
-            var editorFrame = $(".cke_contents iframe");
-            var qtnts = editorFrame.contents();
+				}
+			})
+                            // }
+                            // else //iframe not loaded yet
+                                // bindEditorFrameLoad(editorFrame, settings);
+    
 
-            //bind observer for new children (text)
-            if (qtnts.length > 0) //the contents are available, iframe loaded
-            {
-                if (settings.customDefaultStyle.active && shouldStyle)
-                    observers.insideEditor.observe(editorFrame.contents().find("body")[0], { childList: true });
-                if (settings.classicIcons)
-                    addStyle(buildOldIconsStylesheet(), "oldIcons", editorFrame.contents().find("head")[0]);
-            }
-            else //iframe not loaded yet
-                editorFrame.load(function ()
-                {
-                    if (settings.customDefaultStyle.active && shouldStyle)
-                        observers.insideEditor.observe($(this).contents().find("body")[0], { childList: true });
-                    if (settings.classicIcons)
-                        addStyle(buildOldIconsStylesheet(), "oldIcons", $(this).contents().find("head")[0]);
-                });
-        }
         //observe new iframes that might appear if the user quotes
         if ($(".editor_textbox").length > 0)
             observers.texteditor.observe($(".editor_textbox")[0], { childList: true, subtree: true });
@@ -1251,6 +1476,8 @@ chrome.storage.sync.get("settings", function (data)
             debug.info("disableLiveTyping is enabled");
             injectScript("js/disable_typing.js");
         }
+		// injectScript("js/features/notes.js");
+
 
         //add easy credit to signature
         if (window.location.href.search("editsignature") > -1 || window.location.href.search("updatesignature") > -1)
@@ -1298,81 +1525,7 @@ chrome.storage.sync.get("settings", function (data)
             $('form[action*="signature"] .editor_smiliebox').before(element);
         }
 
-        $(".cats.hi5 .ct[title='אירוחים כללי']").click(function () { eyesPopup(); });
-
-        //custom user notes
-        chrome.storage.local.get("userNotes", function (data)
-        {
-            const notes = data.userNotes || defaultNotes;
-            if (location.pathname == "/member.php") {
-
-                const currentProfileId = document.querySelector('.follow-btn').getAttribute('data-followid');
-
-                //add tab
-				const tabParent = document.querySelector("#userprof_content_container .tabslight");
-                const notesTab = tabParent.querySelector(".userprof_module").cloneNode();
-				notesTab.setAttribute("class", "userprof_moduleinactive");
-				const element = notesTab.querySelector("a");
-				element.setAttribute("id", "usernotes-tab");
-                element.removeAttribute("href");
-                element.removeAttribute("onclick");
-				element.innerText = "הערות";
-
-                notesTab.addEventListener("click", function() {
-					document.querySelector(".selected_view_section").setAttribute("class", "view_section");
-                    document.querySelector("#view-usernotes-content").setAttribute("class", "selected_view_section");
-                    document.querySelector(".userprof_module").setAttribute("class", "userprof_moduleinactive");
-					this.target.setAttribute("class", "userprof_module");
-				})
-
-                //make a click on another tab hide the notes tab
-                tabParent.querySelectorAll("dd a").forEach(function {
-					notesTab.setAttribute("class", "userprof_moduleinactive");
-                    $("#view-usernotes-content").attr("class", "view_section");
-				})
-         
-
-                //add the notes tab to the list
-				tabParent.appendChild(notesTab);
-
-                //add tab content
-                $("#userprof_content_container .profile_content.userprof").append(
-                    $("<div>", { id: "view-usernotes-content", class: "view_section" }).append(
-                        $("<h4>", { class: "subsectionhead userprof_title" }).text("הערות")
-                    ).append(
-                        $("<textarea>", { class: "userNotesEditor", "data-user": currentProfileId }).on('input selectionchange propertychange', function ()
-                        {
-                            userNotesEditorSaveChanges($(this), parseInt($(this).attr("data-user")));
-                        }).each(function ()
-                        {
-                            //set the content to the user's note
-                            var editor = $(this);
-                            getNoteByUserId(currentProfileId, function (noteText)
-                            {
-                                editor.val(noteText);
-                            });
-                        })
-                    ).append(
-                        $("<span>").text("הערות שיכתבו כאן ישמרו אוטומטית, ורק עבור דפדפן זה.")
-                    ).append(
-                        $("<br>")
-                    ).append(
-                        $("<div>", { class: "niceButton inlineBtn grayBtn" }).text("שמור את כל ההערות כקובץ").click(function ()
-                        {
-                            chrome.storage.local.get("userNotes", function (data)
-                            {
-                                var notesObj = data.userNotes || [];
-                                exportAsJsonFile(notesObj, "fxplusplus-notes");
-                            });
-                            chrome.runtime.sendMessage({ event: { cat: "Click", type: "DownloadNotes" } });
-                        })
-                    ).append(
-                        $("<div>", { class: "niceButton inlineBtn grayBtn" }).text("טען הערות מקובץ").click(openLoadNotes)
-                    )
-                );
-            }
-        });
-
+        $(".cats.hi4 .ct[title='אירוחים']").click(function () { eyesPopup(); });
 
 
         handleRatingSuggestion();
@@ -1410,25 +1563,13 @@ chrome.storage.sync.get("settings", function (data)
     });
 });
 
-function getCookie(cookieName) {
-  const cookies = document.cookie.split('; ');
-  for (let i = 0; i < cookies.length; i++) {
-    const [name, value] = cookies[i].split('=');
-    if (name === cookieName) {
-      return value;
-    }
-  }
-  return null; // If cookie not found, return null
-}
 
-
-function toggleDarkMode() {
-	//todo disable enable
-	const bool = getCookie('bb_darkmode') == '1';
-	chrome.runtime.sendMessage({
-		value: bool ? '0' : '1'
-	})
-	// document.cookie = `bb_darkmode=${bool ? '0' : '1'}; domain=www.fxp.co.il; path=/`;
+function toggleDarkMode(isEnabled) {
+	const newValue = isEnabled ? "1" : "0";
+	const exdate = new Date();
+    const date = new Date();
+	exdate.setTime(date.getTime() + 172800000);
+	document.cookie = 'bb_darkmode=' + escape(newValue) + '; expires=' + exdate.toUTCString();
 }
 
 //receive night mode state changes
@@ -1645,42 +1786,6 @@ function openQuickAccess()
 
 
     }
-}
-
-//opens a popup that allows the user to load their notes from storage
-function openLoadNotes()
-{
-    var content = $("<div>");
-    content.append(
-        $("<span>").text("באפשרותך לטעון קובץ הערות ששמרת בעבר דרך התוסף. ")
-    ).append(
-        $("<b>").text("בטעינת קובץ הערות, כל ההערות הקיימות שלך ימחקו.")
-    ).append(
-        $("<div>").append(
-            $("<input>", { type: "file", accept: ".json", id: "notes-file-input", style: "display: none" }).change(function (event)
-            {
-                importNotesFromJsonInput(event, function (status)
-                {
-                    $("#notes-status").attr("class", status.success ? "success" : "failure").text(status.info);
-
-                    //update the editor if the notes were changed
-                    if (status.success)
-                    {
-                        updateNoteTextContainers();
-                        chrome.runtime.sendMessage({ event: { cat: "Click", type: "UploadNotes" } });
-                    }
-                });
-            })
-        ).append(
-            $("<label>", { for: "notes-file-input" }).append(
-                $("<div>", { class: "niceButton blueBtn" }).text("בחר קובץ")
-            )
-        ).append(
-            $("<div>", { id: "notes-status" })
-        )
-    );
-    var imgUrl = chrome.extension.getURL("images/archive.svg");
-    openPopupWindow("load_notes_popup", imgUrl, "טען הערות מקובץ", content);
 }
 
 //resize signature bigger than 295px
@@ -2036,29 +2141,29 @@ var domParser = new DOMParser();
 
 //peek to thread by envelope
 function peekToThread(e, closeMethod)
-{
-    var pm = false;
-    var threadbit = e.parents(".threadbit"); //parent thread line
-    if (threadbit.length === 0) //the parent is actually a PM
-    {
-        threadbit = e.parents(".pmbit");
+{	
+    let pm = false;
+    let threadbit = e.closest('.threadbit'); 
+	console.log(threadbit)
+    if (threadbit.length === 0) { //the parent is actually a PM
+    
+        threadbit = e.closest(".pmbit");
         pm = true;
     }
-    var threadLink = threadbit.find(".title").attr("href");
-    var threadUniqueIdentifier;
-    if (threadLink === null)
-    {
+    const threadLink = threadbit.querySelector(".title").href.split(".il/").pop();
+    let threadUniqueIdentifier;
+    if (threadLink === null) {
         debug.warning("No link for clicked thread!");
         threadLink = "showthread.php?t=1";
         threadUniqueIdentifier = 1;
     }
-    else
-    {
+    else {
         threadUniqueIdentifier = threadLink.match(/=[0-9]+/g);
         if (threadUniqueIdentifier !== null)
             threadUniqueIdentifier = threadUniqueIdentifier[0].substr(1); //remove =
     }
     var id = "mini" + threadUniqueIdentifier;
+	console.log(id);
     if ($("#" + id).length > 0)
     {
         $("#" + id).slideUp(400, function ()
@@ -2074,8 +2179,16 @@ function peekToThread(e, closeMethod)
             e.parents(".pmbit").find(".unread").removeClass("unread"); //remove unread marker
             e.attr("src", "//images.fxp.co.il/images_new/statusicon/pm_old.png"); //change to old message icon
         }
-        else
-            e.parents(".threadbit").after($("<li>", { class: "threadbit minithread", id: id }).append(loadingElement));
+        else {
+
+			const newMiniThread = document.createElement("li");
+			newMiniThread.classList.add("threadbit", "minithread");
+			newMiniThread.id = id;
+			newMiniThread.appendChild(loadingElement);
+
+			threadbit.parentNode.insertBefore(newMiniThread, threadbit.nextSibling);
+		}
+
         loadMinithread(threadLink, $("#" + id), pm);
         $("#" + id).hide().slideDown(400);
         if (closeMethod !== "double")
@@ -2910,7 +3023,9 @@ function getCssOriginalColor(el)
     return el.css("color");
 }
 
+
 //binds the load events for ckeeditor iframes
+//todo
 function bindEditorFrameLoad(editorFrame, settings)
 {
     debug.print(editorFrame);
@@ -2933,161 +3048,8 @@ function bindEditorFrameLoad(editorFrame, settings)
     }
 }
 
-//exports an object as a JSON file
-function exportAsJsonFile(obj, filename)
-{
-    var JsonString = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj));
-    var link = document.createElement("a");
-    link.setAttribute("href", JsonString);
-    link.setAttribute("download", filename + ".json");
-    document.body.appendChild(link); // firefox requirement
-    link.click(); // downloads the data
-}
 
-//binds to a file input. When the input is changed, the file is read and its notes are saved.
-function importNotesFromJsonInput(event, callback)
-{
-    var input = event.target;
 
-    var reader = new FileReader();
-    var notesObj; //object that contains the notes in the file
-    var success = true;
-    var addedInfo = "";
-    reader.onload = function ()
-    {
-        try
-        {
-            var data = reader.result;
-            notesObj = JSON.parse(data);
-        }
-        catch (e)
-        {
-            success = false;
-            if (e instanceof SyntaxError)
-                addedInfo = "לא היה ניתן לפענח את תוכן הקובץ. ייתכן שזה אינו קובץ שנוצר על ידי התוסף או שהקובץ ניזוק.";
-            else
-                addedInfo = "אירעה שגיאה: " + e;
-        }
-
-        if (success)
-            if (verifyNotesObject(notesObj)) //verify that the object contains notes
-            {
-                //override the old notes
-                chrome.storage.local.set({ "userNotes": notesObj }, function ()
-                {
-                    addedInfo = "ההערות החדשות נשמרו.";
-                    callback({
-                        success: success,
-                        info: addedInfo
-                    });
-                });
-            }
-            else
-            {
-                success = false;
-                addedInfo = "הקובץ שבחרת אינו קובץ הערות שנוצר על ידי התוסף.";
-                callback({
-                    success: success,
-                    info: addedInfo
-                });
-            }
-        else
-            callback({
-                success: success,
-                info: addedInfo
-            });
-    };
-    if (input.files.length > 0)
-        reader.readAsText(input.files[0]);
-    else
-        callback({
-            success: false,
-            info: "לא בחרת קובץ."
-        });
-}
-
-//returns true if the object is a valid notes object
-function verifyNotesObject(notesObj)
-{
-    if (!(notesObj instanceof Array)) //notes should be an array
-        return false;
-
-    var note;
-    for (var i = 0; i < notesObj.length; i++)
-    {
-        note = notesObj[i];
-        //all notes should have id and content
-        if (!(note.hasOwnProperty("id") && note.hasOwnProperty("content")))
-            return false;
-    }
-
-    return true;
-}
-
-//locates user note containers and updates them according to their assigned user id
-function updateNoteTextContainers()
-{
-    $(".userNotesEditor").each(function ()
-    {
-        var editor = $(this);
-        var userId = parseInt($(this).attr("data-user"));
-        getNoteByUserId(userId, function (noteText)
-        {
-            editor.val(noteText);
-        });
-    });
-}
-
-var saveNotesTimeout;
-//saves the changes made in the notes'
-function userNotesEditorSaveChanges(editor, id)
-{
-    if (saveNotesTimeout) window.clearTimeout(saveNotesTimeout);
-    //debounce of 0.8secs for the saving
-    saveNotesTimeout = setTimeout(function ()
-    {
-        //always use the latest and greatest notes
-        chrome.storage.local.get("userNotes", function (data)
-        {
-            var notes = data.userNotes || defaultNotes;
-            for (var i = 0; i < notes.length; i++)
-            {
-                if (notes[i].id == id) //remove dupes
-                {
-                    debug.print("removing:");
-                    debug.print(notes[i]);
-                    notes.splice(i, 1);
-                    break;
-                }
-            }
-            //add the note to the beginning of the note list
-            notes.unshift({ id: id, content: editor.val() });
-            chrome.storage.local.set({ "userNotes": notes }, function () { debug.info("saved note"); }); //save
-        });
-    }, 800);
-}
-
-//returns the text of a note for a user
-function getNoteByUserId(id, callback)
-{
-    var foundNote = false;
-    chrome.storage.local.get("userNotes", function (data)
-    {
-        var notes = data.userNotes || defaultNotes;
-        for (var i = 0; i < notes.length && !foundNote; i++) //search for the note
-        {
-            if (notes[i].id == id)
-            {
-                callback(notes[i].content);
-                foundNote = true;
-            }
-        }
-        if (!foundNote)
-            callback("");
-
-    });
-
-}
 
 //fixes the ordering of minithreads so each minithread appears below its parent
 function fixMinithreadOrdring()
@@ -3368,11 +3330,6 @@ function timeInMinutes(timeString) {
 	const [hours, minutes] = timeString.split(':').map(Number);
     return hours * 60 + minutes;
 };
-
-	
-	const [hours, mins] = time.split(":");
-    return hours * 60 + minutes;
-}
 
 //toggles the manage thread topdown that appears next to titles
 function toggleManageThreadDropdown(open)
