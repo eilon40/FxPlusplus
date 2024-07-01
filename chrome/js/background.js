@@ -17,8 +17,7 @@
 
 "use strict";
 
-var factorySettings =
-{
+const factorySettings = {
     backgroundNotifications: true,
     overviewNotificationBoot: true,
     resizeSignatures: false,
@@ -115,14 +114,10 @@ var alreadyNotifiedTrackedThreads = {}; //tracked threads id-comment pairs that 
 
 chrome.storage.sync.get("settings", function (data)
 {
-    var settings;
-    if (data)
-        settings = data?.settings || {};
-    else
-        settings = {};
+    const settings = data?.settings || {};
 
     //make sure settings has values
-    var settingsReset = false;
+    let settingsReset = false;
     for (var prop in factorySettings)
     {
         if (settings.hasOwnProperty(prop))
@@ -246,30 +241,6 @@ chrome.runtime.onMessage.addListener(
             sendEvent(request.event.cat, request.event.type);
         }
 		
-		if (request.value) {
-						  // chrome.cookies.remove({
-				// url:  "www.fxp.co.il",
-				// name: "bb_darkmode",
-			// }, function (removedCookie) {
-				// console.log('removedCookie:', removedCookie); //<=== Why do I get an empty value here? 
-			// });
-
-			  const cookieData = {
-				url: "https://www.fxp.co.il",
-				name: "bb_darkmode",
-				value: request.value,
-				expirationDate: (new Date().getTime()/1000) + 3600
-
-			  };
-
-			  // chrome.cookies.onChanged.addListener(
-  // callback: function,
-// )
-
-			  chrome.cookies.set(cookieData, function (cookie) {
-				  console.log('set', cookie);
-			  });
-		}
     });
 
 
