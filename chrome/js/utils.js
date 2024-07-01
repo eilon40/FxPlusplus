@@ -31,10 +31,10 @@ var utils = function ()
     }
 
     //GET http function
-    function httpGetAsync(theUrl, callback)
+    function httpGetAsync(theUrl, callback, type = "text")
     {
 		fetch(theUrl)
-			.then(response => response.text())
+			.then(response => response[type]())
 			.then(callback);
     }
 
@@ -118,7 +118,6 @@ var utils = function ()
                 });
     }
 
-    //gets a users's id from a member.php?u=XXXXXXXXX address
     function getUserIdFromLink(link) {		
 		const id = (new URLSearchParams(link)).get('u');
         if (id === null) {
@@ -130,7 +129,7 @@ var utils = function ()
     //returns notification objects for tracked threads
     function getNotificationsTrackedThreads(callback)
     {
-        var noti = [];
+        const noti = [];
         var commentNum, url;
         chrome.storage.local.get("threadComments", function (data)
         {
@@ -174,9 +173,7 @@ var utils = function ()
         });
     }
 
-    //returns notifications from each kind, and total from FXP itself
-    function getNotificationsNormal(callback)
-    {
+    function getNotificationsNormal(callback) {
         const noti = {
             pms: 0,
             likes: 0,
@@ -186,14 +183,13 @@ var utils = function ()
 			}
         };
 		httpGetAsync(fxpDomain + "feed_live.php", function (data) {
-			const notificationCount = JSON.parse(data);
-            noti.pms = parseInt(notificationCount.pm);
-			noti.likes = parseInt(notificationCount.like);
-			noti.notifications = parseInt(notificationCount.noti);
+            noti.pms = parseInt(data.pm);
+			noti.likes = parseInt(data.like);
+			noti.notifications = parseInt(data.noti);
 
             console.log(noti.total() + " normal notifications");
 			callback(noti);
-        });
+        }, "json");
     }
 
     //returns the addition of all notification types
@@ -212,23 +208,20 @@ var utils = function ()
     }
 
     //returns the deepest child of the element
-    function getDeepestChild(element)
-    {
-        if (element.children().length === 0)
-            return element;
+	function getDeepestChild(element) {
+		if (!element.hasChildNodes()) {
+			return element;
+		}
 
-        var target = element.children(),
-            next = target;
+		let deepestChild = element.firstChild;
 
-        while (next.length)
-        {
-            target = next;
-            next = next.children();
-        }
+		while (deepestChild.hasChildNodes()) {
+			deepestChild = deepestChild.firstChild;
+		}
 
-        return target;
-    }
-
+		return deepestChild;
+	}
+	
     //sets the content of the subnick container
     function setSubnickContainer(subnick, subnickContainer)
     {
@@ -262,78 +255,61 @@ var utils = function ()
         }
         return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
     }
+	
+	function createElement(el, opt = {}) {
+		return Object.assign(document.createElement(el), opt);
 
-    //builds a wrapper object for custom default style
-    function buildStyleWrapper(styleProp, noFonts, wysibbBox)
-    {
-        //wysibbBox = true for wysibb boxes which do not support specific styles.
+	}
+	
 
-        var styleWrapper;
-        var styleElements = [];
+	function getDeepestChild(element) {
+		if (!element.children.length) {
+			return element;
+		}
+		return getDeepestChild(element.children[element.children.length - 1]);
+	}
 
-        //build the elements according to the style
-        if (styleProp.color !== "#333333") //disable if the color is the default color
-        {
-            styleElements.push($("<span>", { style: "color:" + styleProp.color }));
-        }
-        if (styleProp.size !== 2 && !wysibbBox) //disable if the size is the default size
-        {
-            styleElements.push($("<font>", { size: styleProp.size }));
-        }
-        if (styleProp.underline)
-        {
-            styleElements.push($("<u>"));
-        }
-        if (styleProp.italic && !wysibbBox)
-        {
-            styleElements.push($("<em>"));
-        }
-        if (styleProp.bold)
-        {
-            styleElements.push($("<strong>"));
-        }
-        if (styleProp.font !== "Arial" && !noFonts && !wysibbBox) //disable if default font or a page with no fonts enabled
-        {
-            styleElements.push($("<span>", { style: "font-family: '" + styleProp.font + "'" }));
-        }
+	function buildStyleWrapper(styles, disableFonts = false, isWysibbBox = true) {
+		const styleElements = [];
 
-        if (styleElements.length > 0)
-        {
-            //wrap elements inside each other
-            styleWrapper = styleElements[0];
-            for (var i = 1; i < styleElements.length; i++)
-            {
-                getDeepestChild(styleWrapper).append(styleElements[i]);
-            }
-        }
+		if (styles.color !== "#333333") {
+			styleElements.push(createElement("span", { style: `color: ${styles.color}` }));
+		}
+		if (styles.size !== 2 && !isWysibbBox) {
+			styleElements.push(createElement("font", { size: styles.size }));
+		}
+		if (styles.underline) {
+			styleElements.push(createElement("u"));
+		}
+		if (styles.italic && !isWysibbBox) {
+			styleElements.push(createElement("em"));
+		}
+		if (styles.bold) {
+			styleElements.push(createElement("strong"));
+		}
+		if (styles.font !== "Arial" && !disableFonts && !isWysibbBox) {
+			styleElements.push(createElement("span", { style: `font-family: '${styles.font}'` }));
+		}
 
-        return styleWrapper;
-    }
+		if (!styleElements.length) {
+			return null;
+		}
+
+		let styleWrapper = styleElements[0];
+		for (let i = 1; i < styleElements.length; i++) {
+			getDeepestChild(styleWrapper).appendChild(styleElements[i]);
+		}
+		return styleWrapper;
+	}
 
     //wraps the target around the deepest element of the wrapper
     function deepWrap(target, wrapper)
     {
         target.parentNode.insertBefore(wrapper, target);
-        getDeepestChild($(wrapper))[0].appendChild(target);
+        getDeepestChild(wrapper).append(target);
     }
 
     //fixes the caret's position when applying a style to the editor
-    function fixCaret(styleElement)
-    {
-        var doc = styleElement.ownerDocument || styleElement.document; //get the document
-        var win = doc.defaultView || doc.parentWindow; //get the window
-
-        var range = doc.createRange(); //create new range
-        var selection = win.getSelection(); //get the current range
-
-        //set the caret to the end of the element
-        range.setStart(styleElement, styleElement.textContent.length);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-
-    }
-
     return {
         getDomainCookies,
         httpGetAsync,
@@ -350,7 +326,6 @@ var utils = function ()
         convertRgbToHex,
 
         buildStyleWrapper,
-        deepWrap,
-        fixCaret
-    };
+        deepWrap
+	};
 }();
