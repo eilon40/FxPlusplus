@@ -1,0 +1,34 @@
+{
+    "manifest_version": 3,
+	"name": "FXPlus+ Addons for Chrome",
+	"short_name": "FXPlus+ Addons",
+	"author": "SilverTuxedo",
+	"description": "מעולם לא היה קל יותר לגלוש ב-FxP.",
+    "version": "1.5.5",
+    "icons": {
+        "16": "logo/logo-16.png",
+        "48": "logo/logo-48.png",
+        "128": "logo/logo-128.png"
+    },
+    "permissions": [
+		"storage"
+	],
+    "host_permissions": [
+        "https://fxp.co.il/*"
+    ],
+    "content_scripts": [{
+		"js": [ "utils.js" ],
+        "matches": ["https://www.fxp.co.il/*"]
+    }, {
+		"js": ["features/AntiDeletePms.js"],
+		"world": "MAIN",
+		"all_frames": true,
+		"matches": ["https://www.fxp.co.il/private_chat.php?do=showpm*"]
+	}, {
+		"js": ["features/showForumStats.js", "features/staffOnlineStatus.js"],
+		"matches": ["https://www.fxp.co.il/forumdisplay.php?f=*", "https://www.fxp.co.il/*/"]
+	}, {
+		"js": ["features/autoReader.js"],
+		"matches": ["https://www.fxp.co.il/show*"]
+	}]
+}
