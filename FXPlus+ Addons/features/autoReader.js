@@ -32,7 +32,7 @@ link.innerText = 'הקרא אשכול';
 link.onclick = play;
 link.className = "newcontent_textcontrol";
 link.style.width = "136px";
-if ('speechSynthesis' in window) {
+if ('speechSynthesis' in window && document.querySelectorAll('.postbit').length > 0) {
 	if (ismobile) {
 		document.querySelector('.page_title_fxp').after(link);
 	} else {

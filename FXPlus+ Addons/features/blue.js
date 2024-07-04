@@ -504,23 +504,40 @@ const object = {
 
 const urlParams = new URLSearchParams(location.search);
 const id = urlParams.get('f');
-const app = document.querySelector(".flo.modore");
-app.innerHTML = "";
+
 if (id && object[id]) {
-	const div = document.createElement("div");
+	const app = document.querySelector(".flo.modore");
+	app.innerHTML = "";
 
-	for (const {username, uid} of object[id]) {
+	const table = document.createElement("table");
+	const thead = document.createElement("thead");
+	const th = document.createElement("th");
 
-		const userLink = new URL("https://fxp.co.il/member.php", "https://fxp.co.il");
-		userLink.searchParams.set('u', uid);
+	th.scope = "row";
+	th.innerText = "מפקחים לשעבר";
+	thead.appendChild(th);
 
-		const u = document.createElement("a");
-		u.href = userLink.toString();
-		u.innerText = username;
-		const span = document.createElement("span");
-		span.innerText = " | ";
-		div.append(u, document.createTextNode(" | "));
-	}
+	const tbody = document.createElement("tbody");
+	const data = splitIntoChunks(object[id], 2);
 	
-	app.appendChild(div);
+	for (const group of data) {
+		const tr = document.createElement("tr");
+
+		for (const supervisor of group) {
+
+			const td = document.createElement("td");
+			const a = document.createElement("a");
+
+			const userLink = new URL("https://fxp.co.il/member.php", "https://fxp.co.il");
+			userLink.searchParams.set('u', supervisor.uid);
+
+			a.href = userLink.toString();
+			a.innerText = supervisor.username;
+			td.appendChild(a);
+			tr.appendChild(td);
+		}
+		tbody.appendChild(tr);
+	}
+	table.append(thead, tbody);
+	app.appendChild(table);
 }
