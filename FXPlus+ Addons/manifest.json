@@ -30,5 +30,9 @@
 	}, {
 		"js": ["features/autoReader.js", "features/friends.js"],
 		"matches": ["https://www.fxp.co.il/show*"]
+	}, {
+		"js": ["features/smileys.js"],
+		"world": "MAIN",
+		"matches": ["https://www.fxp.co.il/newreply.php*", "https://www.fxp.co.il/show*"]
 	}]
 }
