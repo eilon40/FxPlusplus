@@ -28,7 +28,7 @@
 		"js": ["features/showForumStats.js", "features/staffOnlineStatus.js", "features/blue.js"],
 		"matches": ["https://www.fxp.co.il/forumdisplay.php?f=*", "https://www.fxp.co.il/*/"]
 	}, {
-		"js": ["features/autoReader.js", "features/friends.js"],
+		"js": ["features/autoReader.js", "features/friends.js", "features/like.js"],
 		"matches": ["https://www.fxp.co.il/show*"]
 	}, {
 		"js": ["features/smileys.js"],
