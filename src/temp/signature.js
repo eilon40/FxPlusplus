@@ -141,7 +141,7 @@ export default {
 		description: '',
 		permission: ''
 	},
-	authorId: 67488,
+	authorId: 967488,
 	version: '2024-08-08',
 	match: 'signature',
 	loaded: true,

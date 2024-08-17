@@ -1,2 +1,1 @@
-console.log("servicesssss");
-//# sourceMappingURL=serviceWorker.bundle.js.map
+(()=>{chrome.runtime.onMessage.addListener((function(e,t,n){if(console.log(e),e.hasOwnProperty("updateBadge")){const e=""+Math.floor(11*Math.random());console.log(e),o(e)}}));const o=o=>{chrome.action.setBadgeText({text:o})}})();

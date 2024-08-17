@@ -1,7 +1,9 @@
 import { addStyle } from '../utils';
 
 // console.log(window?.USER_ID_FXP || '0');
-const userLink = document.querySelector('.log_in6 a').href;
+
+function execScript() {
+	const userLink = document.querySelector('.log_in6 a').href;
 const db = 'likes' + (userLink.split("u=").at(1) || '0'); //TODO: chrome storage
 const likeLimit = 10;
 const selector = '.button-like-holder > span[onclick="makelike(this.id);"]';
@@ -27,7 +29,6 @@ const updateTimer = () => {
 
 const timer = setInterval(updateTimer, likeLimit * 3000);
 
-function execScript() {
 	updateLikeButton();
 	updateTimer();
 
@@ -48,11 +49,11 @@ function execScript() {
 
 export default {
 	setting: {
-		name: '',
-		description: '',
+		name: 'מגבלת לייקים',
+		description: 'משתמש בסמל לייק שבור כדי ליידע על הגעה למגבלת הלייקים.',
 		permission: 'likes'
 	},
-	authorId: 967488,
+	authorId: 1129410,
 	version: '2024-08-08',
 	match: 'show',
 	loaded: true,

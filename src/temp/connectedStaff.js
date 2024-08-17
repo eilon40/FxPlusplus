@@ -36,8 +36,8 @@ function execScript() {
 				
 export default {
 	setting: {
-		name: '',
-		description: '',
+		name: 'מסמן צוות מחובר',
+		description: 'בתוך הפורום, חברי צוות המחוברים יזוהו על ידי אייקון ירוק קטן המוצג לצד שמם.',
 		permission: 'connectedStaff'
 	},
 	authorId: 1129410,

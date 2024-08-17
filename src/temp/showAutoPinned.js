@@ -1,4 +1,4 @@
-import { addStyle, createOptionElement } from '../utils';
+import { addStyle } from '../utils';
 
 function execScript() {
 

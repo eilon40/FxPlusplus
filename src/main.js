@@ -1,56 +1,60 @@
 const requireModule = require.context('./temp/', false, /.js$/);
 
-// const triggerFunctions = [];
-
+const triggerFunctions = [];
 const allModules = requireModule.keys().map(moduleName => {
+	
 	const module = requireModule(moduleName).default;
-	let triggerFunction = documentReady(module.loaded, module.execute, module.match);
-	if (triggerFunction) {
-		triggerFunction = triggerFunction();
-		// triggerFunctions.push({triggerFunction, permission: module.setting.permission });	
-	}
+	documentReady(module.loaded, module.execute, module.match)
+		.then(function(triggerFunction) {
+			const temp = triggerFunction();
+			triggerFunctions.push({triggerFunction: temp, permission: module.setting.permission, temp: triggerFunction });	
+		})
+		.catch(function () {})
 	return module;
 });
 
 function documentReady(shouldWait, callback, runOnly) {
-	const urlPath = location.href.split('/').pop();
-	runOnly = runOnly.replace('*', '.');
+	return new Promise((resolve, reject) => {
+		const urlPath = location.href.split('/').pop();
+		runOnly = runOnly.replace('*', '');
 
-	if (runOnly && !urlPath.includes(runOnly)) {
-		return false;
-	}
+		if (runOnly && !urlPath.includes(runOnly)) {
+			reject(new Error('URL path does not match runOnly condition'));
+		}
 
-	if (!shouldWait) {
-		return callback;
-	}
+		if (!shouldWait) {
+			resolve(callback);
+		} else if (document.readyState === 'complete' || document.readyState === 'interactive') {
+			resolve(callback);
+		}
 
-	if (document.readyState === 'interactive' || document.readyState === 'complete') {
-		return callback;
-	}
-	
-	return false;//documentReady(shouldWait, callback, runOnly);
+		const handler = () => {
+			document.removeEventListener('DOMContentLoaded', handler);
+			resolve(callback);
+		};
+		
+		document.addEventListener('DOMContentLoaded', handler);
+	});
 }
 
-
 chrome.storage.onChanged.addListener(changes => {
-	// const relevantModuleIndex = triggerFunctions.findIndex(triggerFunction =>
-		// changes.hasOwnProperty(triggerFunction.permission)
-	// );
-	// if (relevantModuleIndex < 0) return; // no module matches the permission or triggerFunction is invalid
-	// const relevantModule = triggerFunctions[relevantModuleIndex];
-	
-	// const permissionChange = changes[relevantModule.permission];
-	// console.log(`Storage change detected for permission: '${permissionChange.newValue}'`);
-	// if (relevantModule.triggerFunction === relevantModule.temp) {
-		// console.log('Calling onStart');
-		// const temp = relevantModule.temp();
-		// triggerFunctions[relevantModuleIndex] = temp; 
+	const relevantModuleIndex = triggerFunctions.findIndex(triggerFunction =>
+		changes.hasOwnProperty(triggerFunction.permission)
+	);
 
-	// } else {
-		// console.log('Calling onDestroy');
-		// relevantModule.triggerFunction();
-		// triggerFunctions[relevantModuleIndex] = relevantModule.temp;
-	// }
+	if (relevantModuleIndex < 0) return; // no module matches the permission or triggerFunction is invalid
+	const relevantModule = triggerFunctions[relevantModuleIndex];
+	
+	const permissionChange = changes[relevantModule.permission];
+	console.log(`Storage change detected for permission: '${permissionChange.newValue}'`);
+	if (relevantModule.triggerFunction.name === 'execute') {
+		console.log('Calling onStart');
+		const temp = relevantModule.temp();
+		triggerFunctions[relevantModuleIndex].triggerFunction = temp; 
+	} else {
+		console.log('Calling onDestroy');
+		(window || document).dispatchEvent(new Event('disableScript'));
+		relevantModule.triggerFunction();
+		triggerFunctions[relevantModuleIndex].triggerFunction = relevantModule.temp;
+	}
 });
-// import { createOptionElement } from './utils';
-// console.log(createOptionElement(...Object.values(module.setting)));

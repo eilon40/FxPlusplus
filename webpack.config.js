@@ -4,7 +4,8 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
 	entry: {
 		main: './src/main.js',
-		serviceWorker: './src/serviceWorker.js'
+		serviceWorker: './src/serviceWorker.js',
+		setting: './src/settings.js'
 	},
 	output: {
 		filename: '[name].bundle.js', 
