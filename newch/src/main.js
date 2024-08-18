@@ -7,7 +7,7 @@
 		documentReady(module.loaded, module.execute, module.match)
 			.then(function(triggerFunction) {
 				let temp = null;
-				if (settings[module.setting.permission]) {
+				if (settings[module.setting.permission] || module.setting.permission === '') {
 					temp = triggerFunction();
 				}
 				triggerFunctions.push({triggerFunction: temp, permission: module.setting.permission, temp: triggerFunction });
