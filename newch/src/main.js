@@ -1,73 +1,74 @@
-(async () => {
-	const requireModule = require.context('./temp/', false, /.js$/);
+const requireModule = require.context('./temp/', false, /\.js$/);
+const modulePaths = requireModule.keys();
+const triggerFunctions = [];
+
+(async (documentReady) => {
 	const settings = await chrome.storage.local.get(null);
-	const triggerFunctions = [];
-	const allModules = requireModule.keys().map(moduleName => {
-		const module = requireModule(moduleName).default;
-		documentReady(module.loaded, module.execute, module.match)
-			.then(function(triggerFunction) {
-				let temp = null;
-				if (settings[module.setting.permission] || module.setting.permission === '') {
-					temp = triggerFunction();
-				}
-				triggerFunctions.push({triggerFunction: temp, permission: module.setting.permission, temp: triggerFunction });
-			})
-			.catch(function () {})
-		return module;
-	});
-	
-	
-	function documentReady(shouldWait, callback, runOnly) {
-		return new Promise((resolve, reject) => {
-			const urlPath = location.href.split('/').pop();
-			runOnly = runOnly.replace('*', '');
-			
-			if (runOnly && !urlPath.includes(runOnly)) {
-				reject(new Error('URL path does not match runOnly condition'));
-			}
 
-			if (!shouldWait) {
-				resolve(callback);
-			} else if (document.readyState === 'complete' || document.readyState === 'interactive') {
-				resolve(callback);
-			}
-
-			const handler = () => {
-				document.removeEventListener('DOMContentLoaded', handler);
-				resolve(callback);
-			};
+	for (const modulePath of modulePaths) {
+		const { loaded, execute, match, setting } = requireModule(modulePath).default;
+		const defaultFunction = await documentReady(loaded, execute, match);
+		let triggerFunction = null;
 				
-			document.addEventListener('DOMContentLoaded', handler);
-		});
+		if (setting === undefined || settings[setting?.permission]) {
+			triggerFunction = defaultFunction();
+		}
+
+		triggerFunctions.push({ triggerFunction, defaultFunction, permission: setting?.permission });
+
 	}
+	
+})(documentReady);
 
-
-	chrome.storage.onChanged.addListener(changes => {
-		const matchingModuleIndex = triggerFunctions.findIndex(triggerFunction => changes.hasOwnProperty(triggerFunction.permission));
-
-		if (matchingModuleIndex === -1) {
-			return; //No module matches the permission or triggerFunction is invalid
-		}	
-		const matchingModule = triggerFunctions[matchingModuleIndex];
-
-		if (matchingModule.triggerFunction === null) {
-			console.log('Module initialization detected for permission:', matchingModule.permission);
-			const updatedFunction = matchingModule.temp();
-			triggerFunctions[matchingModuleIndex].triggerFunction = updatedFunction;
-			return;
+function documentReady(shouldWait, callback, runOnly) {
+	return new Promise((resolve, reject) => {
+		const urlPath = location.href.split('/').pop();
+		runOnly = runOnly.replace('*', '');
+			
+		if (runOnly && !urlPath.includes(runOnly)) {
+			const thing = () => thing; 
+			resolve(thing);
 		}
-		const permissionChange = changes[matchingModule.permission];
-
-		if (matchingModule.triggerFunction.name === 'execute' && permissionChange.newValue === true) {
-			console.log('Calling onStart due to permission granted');
-			const updatedFunction = matchingModule.temp();
-			triggerFunctions[matchingModuleIndex].triggerFunction = updatedFunction;
-		} else if (permissionChange.newValue === false) {
-			console.log('Calling onDestroy due to permission revoked');
-			(window || document).dispatchEvent(new Event('disableScript'));
-			matchingModule.triggerFunction();
-			triggerFunctions[matchingModuleIndex].triggerFunction = matchingModule.temp;
+			
+		const handler = (hasEvent) => {
+			if (hasEvent) {
+				document.removeEventListener('DOMContentLoaded', handler);
+			}
+			resolve(callback);
 		}
-	})
 
-})();
+		if (!shouldWait || /complete|interactive/.test(document.readyState)) {
+			handler();
+		}
+			
+		document.addEventListener('DOMContentLoaded', handler);
+	});
+}
+
+chrome.storage.onChanged.addListener(changes => {
+	const matchingIndex = triggerFunctions.findIndex(func => changes.hasOwnProperty(func.permission));
+
+    if (matchingIndex === -1) return; 
+
+    const matchingModule = triggerFunctions[matchingIndex];
+
+    if (matchingModule.triggerFunction === null) {
+		console.log('Module initialization detected:', matchingModule.permission);
+		const updatedFunction = matchingModule.defaultFunction();
+        triggerFunctions[matchingIndex].triggerFunction = updatedFunction;
+        return;
+    }
+
+    const permissionChange = changes[matchingModule.permission];
+
+    if (matchingModule.triggerFunction.name === 'execute' && permissionChange.newValue === true) {
+		console.log('Calling onStart due to permission granted');
+		const updatedFunction = matchingModule.defaultFunction();
+		triggerFunctions[matchingIndex].triggerFunction = updatedFunction;
+	} else if (permissionChange.newValue === false) {
+		console.log('Calling onDestroy due to permission revoked');
+		(window || document).dispatchEvent(new Event('disableScript'));
+		matchingModule.triggerFunction();
+		triggerFunctions[matchingIndex].triggerFunction = matchingModule.defaultFunction;
+	}
+});
