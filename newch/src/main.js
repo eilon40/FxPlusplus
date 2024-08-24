@@ -7,15 +7,15 @@ const triggerFunctions = [];
 
 	for (const modulePath of modulePaths) {
 		const { loaded, execute, match, setting } = requireModule(modulePath).default;
+		const tmp = settings[setting?.permission];
 		const defaultFunction = await documentReady(loaded, execute, match);
 		let triggerFunction = null;
-				
-		if (setting === undefined || settings[setting?.permission]) {
+		
+		if (setting === undefined || (typeof tmp === "object" ? tmp.active : tmp)) {
 			triggerFunction = defaultFunction();
 		}
 
 		triggerFunctions.push({ triggerFunction, defaultFunction, permission: setting?.permission });
-
 	}
 	
 })(documentReady);
