@@ -1,3 +1,9 @@
+export function getDupeSortedDictionary(arr) {
+	return Object.entries(arr.reduce((counts, value) => {
+		counts[value] = (counts[value] || 0) + 1;
+		return counts;
+	}, {})).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
 export function fetcher(url) {
 	return fetch(url).then(response => response.text())
 }
@@ -45,7 +51,7 @@ export function injectScript(filename) {
 	const script = document.createElement('script');
 	script.type = 'text/javascript';
 	script.src = chrome.runtime.getURL(filename);
-	
+
 	document.head.appendChild(script);
 
 	return script;
@@ -54,10 +60,3 @@ export function injectScript(filename) {
 function getStorage(key) {
 	return chrome.storage.local.get(key).then(data => data[key] || {});
 }
-
-// chrome.storage.onChanged.addListener(changes => {
-  // for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
-  // }
-// });
-
-

@@ -28,8 +28,7 @@ export default {
 		permission: 'showSpoilers'
 	},
 	authorId: 967488,
-	version: '2024-08-08',
-	match: 'show',
+	match: 'thread',
 	loaded: true,
 	execute: execScript
 }

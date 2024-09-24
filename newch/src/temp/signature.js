@@ -1,7 +1,7 @@
 import { addStyle } from '../utils';
 
 function execScript() {
-
+	console.log('sign');
 	const publishedThreadUrl = "https://www.fxp.co.il/showthread.php?t=16859147"
 	var node_1 = document.createElement('DIV');
 	node_1.setAttribute('id', 'creditAddon');
@@ -98,13 +98,7 @@ function execScript() {
 
 
 export default {
-	setting: {
-		name: '',
-		description: '',
-		permission: ''
-	},
 	authorId: 967488,
-	version: '2024-08-08',
 	match: 'signature',
 	loaded: true,
 	execute: execScript

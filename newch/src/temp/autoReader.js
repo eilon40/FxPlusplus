@@ -51,14 +51,11 @@ function execScript() {
 export default {
 	setting: {
 		name: 'הקראה של האשכול',
-		description: 'Todo',
+		description: 'מאפשר לשמוע את התוכן של האשכול',
 		permission: 'autoReader',
 	},
 	authorId: 1129410,
-	version: '2024-08-08',
-	match: 'show',
+	match: 'thread',
 	loaded: true,
 	execute: execScript
 }
-
-

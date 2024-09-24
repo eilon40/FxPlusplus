@@ -7,6 +7,7 @@ const triggerFunctions = [];
 
 	for (const modulePath of modulePaths) {
 		const { loaded, execute, match, setting } = requireModule(modulePath).default;
+		console.log(loaded, execute, match, setting);
 		const tmp = settings[setting?.permission];
 		const defaultFunction = await documentReady(loaded, execute, match);
 		let triggerFunction = null;
@@ -22,12 +23,12 @@ const triggerFunctions = [];
 
 function documentReady(shouldWait, callback, runOnly) {
 	return new Promise((resolve, reject) => {
-		const urlPath = location.href.split('/').pop();
-		runOnly = runOnly.replace('*', '');
-			
-		if (runOnly && !urlPath.includes(runOnly)) {
-			const thing = () => thing; 
-			resolve(thing);
+		const urlPath = '/' + location.href.split('/').pop();
+		runOnly = new RegExp(runOnly.replace('*', '.*').replace('index', '/(?:index.php)?').replace('thread', 'show(post|thread)'));
+
+		if (!runOnly.test(urlPath)) { // runOnly && !urlPath.includes(runOnly)
+			const notFound = () => notFound; 
+			resolve(notFound);
 		}
 			
 		const handler = (hasEvent) => {

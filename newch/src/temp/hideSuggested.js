@@ -23,7 +23,6 @@ export default {
 		permission: 'hideSuggested'
 	},
 	authorId: 967488,
-	version: '2024-08-08',
 	match: '*',
 	loaded: false,
 	execute: execScript

@@ -13,12 +13,16 @@ const contributors = {
 
 let settings;
 
-document.addEventListener('click', async function({ target }) {
-	if (target.nodeName === 'INPUT' && target.type === 'checkbox') {
-		chrome.storage.local.set({ [target.id]: target.checked });
-		settings[target.id] = target.checked;
-	}
+document.addEventListener('input', async function({ target }) {
+	if (!/checkbox|number/.test(target.type)) return;
+	const isObject = typeof settings[target.id] === 'object';
+	const newValue = target.type === 'checkbox' ? target.checked : target.valueAsNumber
+	const data = isObject ? { ...settings[target.id], active: newValue } : newValue
+	console.log(data);
+	settings[target.id] = data;
+	chrome.storage.local.set({ [target.id]: data });
 });
+
 requireModule.keys().forEach(async moduleName => {
 	if (!settings) {
 		settings = await chrome.storage.local.get(null);
@@ -47,12 +51,13 @@ requireModule.keys().forEach(async moduleName => {
 		
         document.querySelector('.container-xl .row').appendChild(authorSection);
     }
-    if (!module.setting || !module.setting.name || !module.setting.description || !module.setting.permission) {
+	const setting = module?.setting;
+
+    if (!setting || !setting.name || !setting.description || !setting.permission) {
         console.log(`Module '${moduleName}' is missing required settings.`);
         return;
     }
 
-    const setting = module.setting;
 
 	var node_1 = document.createElement('DIV');
 	node_1.setAttribute('class', 'col-lg-6');
@@ -64,7 +69,7 @@ requireModule.keys().forEach(async moduleName => {
 	var node_3 = document.createElement('DIV');
 	node_3.setAttribute('class', 'card-header d-flex justify-content-between align-items-center');
 	node_2.appendChild(node_3);
-
+	
 	var node_4 = document.createTextNode(setting.name);
 	node_3.appendChild(node_4);
 
@@ -105,7 +110,7 @@ requireModule.keys().forEach(async moduleName => {
 		var node_12 = document.createElement('INPUT');
 		node_12.setAttribute('class', 'form-check-input');
 		node_12.setAttribute('id', setting.sub.permission);
-		node_12.setAttribute('type', 'checkbox');
+		node_12.setAttribute('type', setting.sub.type);
 		node_6.addEventListener('click', function() {
 			node_12.checked = settings[setting.sub.permission] || false;
 			node_12.disabled = !node_12.disabled;
@@ -128,5 +133,4 @@ requireModule.keys().forEach(async moduleName => {
 	if (setting.execute) {
 		setting.execute();
 	}
-
 });

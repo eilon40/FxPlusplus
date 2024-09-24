@@ -1,12 +1,9 @@
 import { injectScript } from '../utils';
 
 function execScript() {
-	console.log('disable_typing')
 	const scriptElement = injectScript('disable_typing.js');
 	
 	return function onDestroy() {
-			console.log(' remove disable_typing')
-
 		scriptElement.remove();
 	}
 }
@@ -20,12 +17,12 @@ export default {
 		sub: {
 			name: 'כולל בצ\'אט הפרטי',
 			description: '',
-			permission: 'disableLiveTypingPm'
+			permission: 'disableLiveTypingPm',
+			type: 'checkbox'
 		}
 	},
 	authorId: 967488,
-	version: '2024-08-08',
-	match: 'show',
+	match: 'thread',
 	loaded: true,
 	execute: execScript
 }

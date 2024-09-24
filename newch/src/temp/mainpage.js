@@ -10,13 +10,12 @@ function execScript() {
 	
 export default {
 	setting: {
-		name: 'דף הבית', 
-		description: 'Todo',
+		name: 'כתבות', 
+		description: 'מסתיר כתבות ישנות מדף הבית.',
 		permission: 'mainpage',
 	},
-	authorId: 967488,
-	version: '2024-08-08',
-	match: '*',
+	authorId: 1129410,
+	match: 'index',
 	loaded: false,
 	execute: execScript
 }

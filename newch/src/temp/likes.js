@@ -4,30 +4,30 @@ import { addStyle } from '../utils';
 
 function execScript() {
 	const userLink = document.querySelector('.log_in6 a').href;
-const db = 'likes' + (userLink.split("u=").at(1) || '0'); //TODO: chrome storage
-const likeLimit = 10;
-const selector = '.button-like-holder > span[onclick="makelike(this.id);"]';
+	const db = 'likes' + (userLink.split("u=").at(1) || '0'); //TODO: chrome storage
+	const likeLimit = 10;
+	const selector = '.button-like-holder > span[onclick="makelike(this.id);"]';
 
-let likes = JSON.parse(localStorage.getItem(db)) || [];
-let styleElement;
-const updateLikeButton = () => {
-	if (likes.length >= likeLimit) {
-		styleElement = addStyle(`${selector} { background-image: url("https://em-content.zobj.net/source/google/387/broken-heart_1f494.png"); }`);
-    }
-};
-
-const updateTimer = () => {
-	const oldestLike = Math.min(...likes);
-	if (Date.now() > oldestLike) {
-		likes = likes.filter(like => like !== oldestLike);
-        localStorage.setItem(db, JSON.stringify(likes));
-        if (likes.length === 0) {
-			clearInterval(timer);
+	let likes = JSON.parse(localStorage.getItem(db)) || [];
+	let styleElement;
+	const updateLikeButton = () => {
+		if (likes.length >= likeLimit) {
+			styleElement = addStyle(`${selector} { background-image: url("https://em-content.zobj.net/source/google/387/broken-heart_1f494.png"); }`);
 		}
-    }
-};
+	};
 
-const timer = setInterval(updateTimer, likeLimit * 3000);
+	const updateTimer = () => {
+		const oldestLike = Math.min(...likes);
+		if (Date.now() > oldestLike) {
+			likes = likes.filter(like => like !== oldestLike);
+			localStorage.setItem(db, JSON.stringify(likes));
+			if (likes.length === 0) {
+				clearInterval(timer);
+			}
+		}
+	};
+
+	const timer = setInterval(updateTimer, likeLimit * 3000);
 
 	updateLikeButton();
 	updateTimer();
@@ -54,8 +54,7 @@ export default {
 		permission: 'likes'
 	},
 	authorId: 1129410,
-	version: '2024-08-08',
-	match: 'show',
+	match: 'thread',
 	loaded: true,
 	execute: execScript
 }

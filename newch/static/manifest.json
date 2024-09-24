@@ -15,13 +15,18 @@
 		"storage",
 		"notifications",
 		"cookies",
-		"alarms"
+		"alarms",
+		"declarativeNetRequest",
+		"webRequest"
 	],
 	"action": {},
 	"background": {
 		"service_worker": "./serviceWorker.bundle.js"
 	
 	},
+	"host_permissions":[
+    "*://*/*"
+],
 	"options_page": "settings.html",
 	"content_scripts": [{
 		"matches": ["https://www.fxp.co.il/*"],

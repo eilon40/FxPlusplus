@@ -65,12 +65,11 @@ function execScript() {
 export default {
 	setting: {
 		name: 'מדגיש רשימת חברים',
-		description: 'Todo',
+		description: 'מוסיף סימון מיוחד להודעות שנשלחו על ידי חברים',
 		permission: 'friends'
 	},
 	authorId: 1129410,
-	version: '2024-08-08',
-	match: 'show',
+	match: 'thread',
 	loaded: true,
 	execute: execScript
 }

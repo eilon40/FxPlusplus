@@ -201,12 +201,11 @@ function execScript() {
 
 export default {
 	setting: {
-		name: 'Todo',
-		description: 'Todo',
+		name: 'הודעות פרטיות',
+		description: 'מציג הודעות פרטיות שנמחקו',
 		permission: 'AntiDeletePms'
 	},
-	authorId: 967488,
-	version: '2024-08-08',
+	authorId: 1129410,
 	match: 'private_chat.php?do=showpm',
 	loaded: false,
 	execute: execScript

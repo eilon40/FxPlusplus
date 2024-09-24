@@ -18,7 +18,6 @@ export default {
 		permission: 'showAutoPinned'
 	},
 	authorId: 967488,
-	version: '2024-08-08',
 	match: 'forumdisplay',
 	loaded: true,
 	execute: execScript
