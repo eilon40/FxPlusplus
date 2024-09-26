@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>FxPlus+ - התראות</title>
+    <meta charset="utf-8" />
+
+    <link rel="shortcut icon" href="icon.png" />
+    <link href="fonts/extra_fonts.css" rel="stylesheet" />
+    <link href="popup.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="titlebar">התראות</div>
+    <a href="https://www.fxp.co.il" target="_blank" style="text-decoration: none;">
+        <div id="countersContainer">
+            <div class="counter">
+                <div id="likeCount" class="counterNum">0</div>
+                <div class="counterName">לייקים</div>
+            </div>
+            <div class="counter">
+                <div id="notificationCount" class="counterNum">0</div>
+                <div class="counterName">התראות</div>
+            </div>
+            <div class="counter">
+                <div id="pmCount" class="counterNum">0</div>
+                <div class="counterName">דואר</div>
+            </div>
+        </div>
+    </a>
+    <div id="notifications">
+    </div>
+    <div id="footer">
+        <div style="display: flex; align-items: center;">
+            <div class="switch noAnimation"><input type="checkbox" id="backgroundNotifications" /><label for="backgroundNotifications"></label></div>
+            <span>שלח התראות גם כאשר האתר סגור</span>
+        </div>
+        <a id="settingsLink" href="" target="_blank">הגדרות</a>
+
+    </div>
+    <!-- <script src="utils.js"></script> -->
+    <script src="popup.js"></script>
+</body>
+</html>

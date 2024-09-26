@@ -1,13 +1,13 @@
 const requireModule = require.context('./temp/', false, /\.js$/);
 const modulePaths = requireModule.keys();
 const triggerFunctions = [];
-
+//todo color setting popup
 (async (documentReady) => {
 	const settings = await chrome.storage.local.get(null);
 
 	for (const modulePath of modulePaths) {
 		const { loaded, execute, match, setting } = requireModule(modulePath).default;
-		console.log(loaded, execute, match, setting);
+		// console.log(loaded, execute, match, setting);
 		const tmp = settings[setting?.permission];
 		const defaultFunction = await documentReady(loaded, execute, match);
 		let triggerFunction = null;

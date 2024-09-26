@@ -4,8 +4,9 @@ export function getDupeSortedDictionary(arr) {
 		return counts;
 	}, {})).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
-export function fetcher(url) {
-	return fetch(url).then(response => response.text())
+
+export function fetcher(url, type = 'text') {
+	return fetch(url).then(response => response[type]())
 }
 
 export function elementReady(selector) {
@@ -56,6 +57,52 @@ export function injectScript(filename) {
 
 	return script;
 }
+
+export const fxpDomain = "https://www.fxp.co.il/";
+
+export function getNotifications() {
+	return fetcher(fxpDomain + "feed_live.php", "json")
+		.then(data => ({
+			pms: parseInt(data.pm),
+			likes: parseInt(data.like),
+			notifications: parseInt(data.noti),
+			get total() {
+				return this.pms + this.likes + this.notifications;
+			}
+		}));
+}
+
+export function sendNotification(title, message, url, list) {
+    const randomId = crypto.randomUUID()
+	
+    const notificationObject = {
+        type: "basic",
+        iconUrl: "notificationImg.png",
+        title,
+        message,
+        isClickable: true
+    };
+
+    if (list) {
+        notificationObject.type = "list";
+        notificationObject.items = list;
+    }
+
+    chrome.notifications.create(randomId, notificationObject);
+
+    chrome.notifications.onClicked.addListener(function (notificationId) {
+        if (notificationId === randomId && url.length > 0) {
+            window.open(url) //todo
+            setTimeout(function () { chrome.notifications.clear(randomId); }, 200);
+        }
+    });
+}
+
+export function changeBadge(value) {
+    chrome.action.setBadgeText({ text: value.toString() });
+}
+
+
 
 function getStorage(key) {
 	return chrome.storage.local.get(key).then(data => data[key] || {});

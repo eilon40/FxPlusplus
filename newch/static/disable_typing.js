@@ -12,3 +12,4 @@
 		window.typeingsend = temp;
 	});
 })();
+

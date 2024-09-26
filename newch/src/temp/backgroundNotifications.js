@@ -1,15 +1,45 @@
+import { sendNotification } from '../utils';
+
 function execScript() {
-	let totalNotifications = 0;
-    let noti;
-	document.querySelectorAll('.noticount').forEach(element => {
-		noti = parseInt(element.innerText);
-		totalNotifications += isNaN(noti) ? 0 : noti;
-	})
-	// console.log(totalNotifications);
-	chrome.runtime.sendMessage({ updateBadge: totalNotifications }); //update the badge
-
+	
+	let pms;
+	
+	function updateBadge() {
+		let totalNotifications = 0, tmp;
+		document.querySelectorAll('.noticount').forEach(element => {
+			tmp = parseInt(element.innerText);
+			totalNotifications += isNaN(tmp) ? 0 : tmp;
+		})
+		totalNotifications ||= "";
+		chrome.runtime.sendMessage({ changeBadge: totalNotifications })
+	}
+	
+	function handleClick() {
+		const counter = this.querySelector('.counter');
+		if (counter.innerText === '0') return;
+		setTimeout(updateBadge, 2500)
+	}
+	
+	updateBadge();
+	
+	const holder = document.getElementById('list_holder');
+	if (holder) {
+		holder.addEventListener('load', function() {
+			const doc = holder.contentWindow.document;
+			pms = doc.querySelectorAll('li.pm');
+			
+			pms.forEach(pm => {
+				pm.addEventListener('click', handleClick);
+			})
+		})
+	}
 	return function onDestroy() {
-
+		if (holder) {
+			console.log(pms);
+			pms.forEach(pm => {
+				pm.removeEventListener('click', handleClick);
+			})
+		}
 	}
 }
 				
@@ -19,36 +49,7 @@ function execSetting() {
 		sendNotification("הודעת בדיקה!", "הידעת? הגולש הממוצע באינטרנט ממצמץ רק 7 פעמים בדקה! ממוצע המצמוץ הנורמלי הוא 20 - כמעט פי 3.", "");
 	})
 }
-		
-//todo import utils
-function sendNotification(title, message, url, list) {
-    var randomId = Math.random().toString(36).substr(2, 10); //generates a random 10 character id
-
-    var notificationObject = {
-        type: "basic",
-        iconUrl: "../notificationImg.png",
-        title: title,
-        message: message,
-        isClickable: true
-    };
-
-    if (list) {
-        notificationObject.type = "list";
-        notificationObject.items = list;
-    }
-
-    chrome.notifications.create(randomId, notificationObject);
-
-    chrome.notifications.onClicked.addListener(function(notificationId) {
-        if (notificationId === randomId && url.length > 0) {
-            window.open(url); //open the url
-            setTimeout(function() {
-                chrome.notifications.clear(randomId);
-            }, 200); //close notification
-        }
-    });
-}
-		
+				
 export default {
 	setting: {
 		name: 'שלח התראות גם כאשר האתר סגור', 
@@ -56,8 +57,9 @@ export default {
 		permission: 'backgroundNotifications',
 		execute: execSetting
 	},
+	// background: function() {},
 	authorId: 967488,
 	match: '*',
-	loaded: false,
+	loaded: true,
 	execute: execScript
 }

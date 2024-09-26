@@ -76,6 +76,7 @@ requireModule.keys().forEach(async moduleName => {
 	var node_5 = document.createElement('DIV');
 	node_5.setAttribute('class', 'form-check form-switch');
 	node_3.appendChild(node_5);
+	console.log(settings[setting.permission], settings);
 	const checkbox = settings[setting.permission] || false;
 	var node_6 = document.createElement('INPUT');
 	node_6.setAttribute('class', 'form-check-input');
