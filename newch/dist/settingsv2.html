@@ -1,0 +1,626 @@
+﻿<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<!--
+    Copyright 2015-2019 SilverTuxedo
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<head>
+    <title>הגדרות FxPlus+</title>
+    <meta charset="utf-8" />
+
+    <link rel="shortcut icon" href="icon.png" />
+    <link href="fonts/extra_fonts.css" rel="stylesheet" />
+    <link href="fonts/materialdesignicons.css" rel="stylesheet" />
+    <link href="settings.css" rel="stylesheet" />
+    <link href="balloon.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="blackScreen" style="display: none;">
+    </div>
+    <div id="aboveBlack">
+        <div class="popupContainer" id="readtimePopup">
+            <div class="popupTop">
+                <div class="popupImg">
+                    <img src="../images/timer.svg" />
+                </div>
+                <div class="popupTitle">חישוב מהירות קריאה ממוצעת</div>
+            </div>
+            <div class="popupBottom">
+                <div id="readtimeText">
+                    בעוד רגעים ספורים יוצג בפניך קטע קצר שלקוח מויקיפדיה. קרא אותו עד סופו, ובסיום הקריאה לחץ על הכפתור בתחתית הדף.<br />
+                    התוסף יחלק את כמות המילים בקטע בזמן שלקח לך לקרוא אותו, ובכך יקבע את מהירות הקריאה שלך.
+                </div><br />
+                <div class="button blue" id="startReadtime">התחל</div>
+                <div class="button clearGray closePopupButton" id="cancelReadtime">בטל</div>
+            </div>
+        </div>
+        <div class="popupContainer" id="bgPopup">
+            <div class="popupTop">
+                <div class="popupImg">
+                    <img src="../images/paint-brush.svg" />
+                </div>
+                <div class="popupTitle">בחר רקע מהרשימה</div>
+            </div>
+            <div class="popupBottom">
+                <div class="button red" id="resetCustomBG">אפס רקע</div>
+                <div class="button clearGray closePopupButton">סגור</div>
+                <br />
+                ניתן לבחור רקע מהרשימה או להזין כתובת תמונה לרקע בתחתית הדף. בצד שמאל מוצג הרקע שיופיע במצב לילה.
+                <div class="sunMoonTopbar">
+                    <img src="../images/sun.svg" />
+                    <img src="../images/moon.svg" />
+                </div>
+                <span id="bgList">
+                </span>
+                <div class="customBackground" id="customBGTile">
+                    <div class="lightBG">
+                        <input type="url" class="bgInput" name="lightBG" placeholder="הזן כתובת תמונה" />
+                    </div><div class="darkBG">
+                        <input type="url" class="bgInput" name="darkBG" placeholder="הזן כתובת תמונה" />
+                    </div>
+                </div>
+                <div class="button clearGray closePopupButton">סגור</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainGrid">
+        <div id="header">
+            <div id="barTop">
+                הגדרות <span class="ltr">FxPlus+</span>
+            </div>
+        </div>
+        <div id="sidebar">
+            <ul id="optionList">
+                <li data-tab="general" class="selected">
+                    <span class="mdi mdi-wrench optionIcon"></span>
+                    <span class="optionDesc">כללי</span>
+                </li>
+                <!-- <li data-tab="threads"> -->
+                    <!-- <span class="mdi mdi-send optionIcon"></span> -->
+                    <!-- <span class="optionDesc">אשכולות</span> -->
+                <!-- </li> -->
+                <!-- <li data-tab="comments"> -->
+                    <!-- <span class="mdi mdi-message-text optionIcon"></span> -->
+                    <!-- <span class="optionDesc">תגובות ותת-ניקים</span> -->
+                <!-- </li> -->
+                <li data-tab="multiuser">
+                    <span class="mdi mdi-account-multiple optionIcon"></span>
+                    <span class="optionDesc">משתמשים</span>
+                </li>
+                <li data-tab="about">
+                    <span class="mdi mdi-information optionIcon"></span>
+                    <span class="optionDesc">אודות</span>
+                </li>
+                <!-- <li data-tab="report"> -->
+                    <!-- <span class="mdi mdi-bug optionIcon"></span> -->
+                    <!-- <span class="optionDesc">דיווח באגים ומשוב</span> -->
+                <!-- </li> -->
+            </ul>
+            <div id="indicators">
+                <div id="savedIndicator">
+                    <span class="mdi mdi-check savedIndicatorLogo"></span><br />
+                    השינויים נשמרו.
+                </div>
+                <div id="resetIndicator">
+                    <span class="mdi mdi-undo-variant savedIndicatorLogo"></span><br />
+                    השינויים בוטלו.
+                </div>
+            </div>
+        </div>
+        <div id="tips">
+            <!-- <span class="mdi mdi-lightbulb-on topBarIcon" id="tipIcon"></span> -->
+            <!-- <span> -->
+                <!-- <b>טיפ: </b> -->
+                <!-- <span id="tip"></span> -->
+            <!-- </span> -->
+        </div>
+        <div id="content">
+            <div id="settingsContent">
+                <!--
+                    General
+                -->
+                <div class="settingsTab" id="general">
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="backgroundNotifications" /><label for="backgroundNotifications"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- שלח התראות גם כאשר האתר סגור -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- התראות לגבי לייקים, ציטוטים ודואר נכנס יופיעו גם כאשר אינך גולש באתר. -->
+                            <!-- <a id="sendTestNotification">לחץ כאן לשליחת הודעת בדיקה.</a> -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="overviewNotificationBoot" /><label for="overviewNotificationBoot"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- שלח התראה מסכמת בהפעלה של הדפדפן -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- בהפעלה של הדפדפן תשלח אליך הודעת סיכום שמציינת כמה התראות קיבלת מאז הפעם האחרונה בה היית מחובר. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="signatureResize" /><label for="signatureResize"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הקטן חתימות גדולות אוטומטית -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- חתימות שחורגות מהגובה החוקי המקסימלי, 295px, יוקטנו באופן אוטומטי. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="unreadComments" /><label for="unreadComments"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הצג את מספר התגובות שלא נקראו -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- ליד אשכולות עם תגובות חדשות יוצג מספר התגובות החדשות באשכול מהפעם האחרונה שקראת אותו. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- סגור -->
+                            <!-- <span class="balloonBorder" data-balloon="ניתן ללחוץ על המעטפה שמופיעה בצד כל אשכול כדי להציץ לתוכן שלו." data-balloon-pos="left">הצצה לאשכולות</span>: -->
+                            <!-- <div style="height: 0.2em"></div> -->
+                            <!-- <div style="display: flex; margin-bottom: 0.15em;"> -->
+                                <!-- <div class="switch radio" style="width: 2em;"><input type="radio" checked name="peekCollapse" id="manualCollapse" /><label for="manualCollapse"></label></div> -->
+                                <!-- בלחיצה חוזרת -->
+                            <!-- </div> -->
+                            <!-- <div class="flex"> -->
+                                <!-- <div class="switch radio" style="width: 2em"><input type="radio" name="peekCollapse" id="automaticCollapse" /><label for="automaticCollapse"></label></div> -->
+                                <!-- אוטומטית -->
+                            <!-- </div> -->
+                        <!-- </div> -->
+                        <!-- <div class="optionToggle"></div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- בלחיצה חוזרת: כאשר המעטפה נלחצת בפעם השנייה.<br /> -->
+                            <!-- אוטומטית: כאשר העכבר עוזב את תיבת האשכול. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+					<!-- <div class="setOption"> -->
+						<!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="enableSpoilers" /><label for="enableSpoilers"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הוספת סמיילים -->
+                            <!-- <div style="height: 0.2em"></div> -->
+							<!-- <textarea></textarea> -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- Todo -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="enableSpoilers" /><label for="enableSpoilers"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הפעל ספוילרים -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- טקסט לבן יהפוך ל<span class="whiteSpoiler">ספוילר</span>. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- <div style="display: flex; margin-bottom: 0.15em;"> -->
+                                <!-- <div class="switch" style="width: 2em;"><input type="checkbox" id="hidePinned" /><label for="hidePinned"></label></div> -->
+                                <!-- <span>הסתר אשכולות נעוצים בני יותר מ-<input type="number" id="hidePinnedDays" class="noArrows" style="width: 2em" value="14" min="5" max="365" /> ימים</span> -->
+                            <!-- </div> -->
+                            <!-- <div class="flex"> -->
+                                <!-- <div class="switch" style="width: 2em; margin-right: 2em"><input type="checkbox" id="hideIncludingRules" /><label for="hideIncludingRules"></label></div> -->
+                                <!-- כולל אשכולות חוקים -->
+                            <!-- </div> -->
+                        <!-- </div> -->
+                        <!-- <div class="optionToggle"></div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- אשכולות נעוצים ישנים יותר מהערך שנבחר יוסתרו. יהיה אפשר לראות אותם בריחוף מעליהם. לפחות 5 ימים. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="showAutoPinned" /><label for="showAutoPinned"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הצג יותר משלושה אשכולות נעוצים -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- בטל את ההסתרה האוטומטית של האשכול הנעוץ הרביעי והלאה. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="hideSuggested" /><label for="hideSuggested"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הסר את Outbrain -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- שירות הצעת הכתבות והאשכולות של Outbrain יוסר לחלוטין מהדף. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="oldEmoji" /><label for="oldEmoji"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- השתמש בסמיילים קלאסיים -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- כל הסמיילים באתר יוחלפו בגרסאות הקלאסיות שלהם. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="autoNight" /><label for="autoNight"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הפעל את מצב הלילה אוטומטית משעה -->
+                            <!-- <input type="time" id="nightStartTime" value="17:05" /> -->
+                            <!-- עד שעה -->
+                            <!-- <input type="time" id="nightEndTime" value="23:30" /> -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- מצב הלילה יפעל בשעות שנבחרו באופן אוטומטי. ניתן להפעיל ולכבות ידנית את מצב הלילה גם כאשר תכונה זו פועלת. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="showForumStats" /><label for="showForumStats"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הצג סטטיסטיקות פורומים -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- בתחתית כל פורום יוצגו סטטיסטיקות. למשל: פותח האשכולות הדומיננטי ביותר, התיוג הנפוץ ביותר, ויחס התגובות לצפיות. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="hideAccessibilityMenu" /><label for="hideAccessibilityMenu"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הסתר את תפריט הנגישות -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- תפריט הנגישות (הכפתור השחור עם סימן האדם בכיסא הגלגלים) יוסתר. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionToggle"><div class="switch"><input type="checkbox" id="connectedStaff" /><label for="connectedStaff"></label></div></div> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- הצג אנשי צוות פעילים -->
+                        <!-- </div> -->
+                        <!-- <div class="optionExplain"> -->
+							<!-- מציג סימון חזותי על מנהלים שמחוברים למערכת בתוך רשימת המנהלים של הפורום -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+                    <!-- <div class="setOption"> -->
+                        <!-- <div class="optionName"> -->
+                            <!-- <div style="display: flex; margin-bottom: 0.15em;"> -->
+                                <!-- <div class="switch" style="width: 2em;"><input type="checkbox" id="disableLiveTyping" /><label for="disableLiveTyping"></label></div> -->
+                                <!-- <span>אל תודיע שאני מקליד</span> -->
+                            <!-- </div> -->
+                            <!-- <div class="flex"> -->
+                                <!-- <div class="switch" style="width: 2em; margin-right: 2em"><input type="checkbox" id="disableLiveTypingPm" /><label for="disableLiveTypingPm"></label></div> -->
+                                <!-- כולל בצ'אט הפרטי -->
+                            <!-- </div> -->
+                        <!-- </div> -->
+                        <!-- <div class="optionToggle"></div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- מבטל את ההודעה שאתה מקליד באשכולות והודעות פרטיות לבחירתך. עדיין תוכל לראות אנשים אחרים מקלידים (אם הם לא הפעילו את אפשרות זו). -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <!-- <div class="setOption"> -->
+
+                        <!-- <div class="optionName"> -->
+                            <!-- <div class="arrowButton" id="changeBgBtn"> -->
+                                <!-- שנה את הרקע -->
+                            <!-- </div> -->
+                        <!-- </div> -->
+                        <!-- <div class="optionToggle"></div> -->
+                        <!-- <div class="optionExplain"> -->
+                            <!-- ניתן לבחור ממגוון דוגמאות, או להזין רקע מיוחד. -->
+                        <!-- </div> -->
+                    <!-- </div> -->
+
+                    <div class="button blue saveSettings" data-category="general">שמור שינויים</div>
+                    <div class="button clearGray resetChanges" data-category="general">בטל</div>
+                </div>
+                <!--
+                    Threads
+                -->
+                <div class="settingsTab" id="threads">
+                    <h2>חוקי הדגשת והסתרת אשכולות</h2>
+                    <b>טיפ: </b>הפרד ערכים בתיבות טקסט באמצעות פסיקים.
+                    <br />
+                    <br />
+                    <table class="StyleThreads" id="StyleThreadsUser" data-tag="user">
+                        <tr class="controlRow">
+                            <td colspan="6">
+                                <span class="thirdWidth addStyleThreadsLine">הוסף שורה</span>
+                                <span class="thirdWidth tableSideDescription">טבלה לפי משתמש</span>
+                                <span class="thirdWidth"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>שם משתמש</td>
+                            <td>תוקף</td>
+                            <td>פורום</td>
+                            <td>אם לא כולל בכותרת</td>
+                            <td>פעולה</td>
+                            <td></td>
+                        </tr>
+                    </table>
+                    <br />
+                    <table class="StyleThreads" id="StyleThreadsKeyword" data-tag="keyword">
+                        <tr class="controlRow">
+                            <td colspan="6">
+                                <span class="thirdWidth addStyleThreadsLine">הוסף שורה</span>
+                                <span class="thirdWidth tableSideDescription">טבלה לפי מילות מפתח</span>
+                                <span class="thirdWidth"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>מילות מפתח</td>
+                            <td>תוקף</td>
+                            <td>פורום</td>
+                            <td>אם לא כולל בכותרת</td>
+                            <td>פעולה</td>
+                            <td></td>
+                        </tr>
+                    </table>
+                    <br />
+                    <div class="flex">
+                        <div class="optionToggle">
+                            <div class="switch"><input type="checkbox" id="filterSticky" /><label for="filterSticky"></label></div>
+                        </div>
+                        החל חוקים גם על אשכולות נעוצים
+                    </div>
+                    <div class="button blue saveSettings" data-category="threads">שמור שינויים</div>
+                    <div class="button clearGray resetChanges" data-category="threadLines">בטל</div>
+
+                    <h2>זמן קריאה</h2>
+                    <span id="recalcReadSpeed">
+                        מהירות הקריאה שלך היא
+                        <b id="readSpeed">200</b>
+                        מילים לדקה; לחץ כאן כדי לחשב מחדש!
+                    </span>
+                    <br />
+                    בחר לאילו אשכולות יוצג זמן הקריאה המשוער.
+                    <br /><br />
+                    <div id="tagList">
+                    </div>
+                    <br />
+                    <div class="button blue saveSettings" data-category="threads">שמור שינויים</div>
+                </div>
+                <!--
+                    Comments
+                -->
+                <div class="settingsTab" id="comments">
+                    <h2>חוקי תגובות לפי משתמש</h2>
+                    <div id="commentsCards">
+
+                    </div>
+                    <div class="button green thin" id="addCardComments">+</div>
+                    <div class="button blue saveSettings" data-category="comments">שמור שינויים</div>
+                    <div class="button clearGray resetChanges" data-category="commentFilters">בטל</div>
+                    <br /><br />
+                    <h2>עיצוב התגובות</h2>
+                    הגדר את העיצוב ההתחלתי של התגובות שלך.<br /><br />
+                    <div class="card" id="autoStyle">
+                        <div id="styleToggleContainer">
+                            <div class="switch"><input type="checkbox" id="enableDefaultStyle" /><label for="enableDefaultStyle"></label></div>
+                            פעיל
+                        </div>
+                        <div contenteditable="true" id="editableStyleText">טקסט זה כתוב בעברית.<br />This text is written in English.</div>
+                        <div id="styleControls">
+                            <div class="styleCont toggleStyle" data-styleAction="bold">
+                                <div class="controlCircle">
+                                    B
+                                </div>
+                            </div>
+                            <div class="styleCont toggleStyle" data-styleAction="italic">
+                                <div class="controlCircle">
+                                    i
+                                </div>
+                            </div>
+                            <div class="styleCont toggleStyle" data-styleAction="underline">
+                                <div class="controlCircle">
+                                    U
+                                </div>
+                            </div>
+                            <div class="styleDivider"></div>
+                            <div class="styleCont">
+                                <select id="selectFont" class="changeStyle">
+                                    <option value="almoni-dl" style="font-family: almoni-dl;">almoni-dl</option>
+                                    <option value="Arial" style="font-family: Arial;">Arial</option>
+                                    <option value="Arial Black" style="font-family: 'Arial Black';">Arial Black</option>
+                                    <option value="Arial Narrow" style="font-family: 'Arial Narrow';">Arial Narrow</option>
+                                    <option value="Book Antiqua" style="font-family: 'Book Antiqua';">Book Antiqua</option>
+                                    <option value="Century Gothic" style="font-family: 'Century Gothic';">Century Gothic</option>
+                                    <option value="Comic Sans MS" style="font-family: 'Comic Sans MS';">Comic Sans MS</option>
+                                    <option value="Courier New" style="font-family: 'Courier New';">Courier New</option>
+                                    <option value="Fixedsys" style="font-family: Fixedsys;">Fixedsys</option>
+                                    <option value="Franklin Gothic Medium" style="font-family: 'Franklin Gothic Medium';">Franklin Gothic Medium</option>
+                                    <option value="Garamond" style="font-family: Garamond;">Garamond</option>
+                                    <option value="Georgia" style="font-family: Georgia;">Georgia</option>
+                                    <option value="Gisha" style="font-family: Gisha;">Gisha</option>
+                                    <option value="Impact" style="font-family: Impact;">Impact</option>
+                                    <option value="Lucida Console" style="font-family: 'Lucida Console';">Lucida Console</option>
+                                    <option value="Lucida Sans Unicode" style="font-family: 'Lucida Sans Unicode';">Lucida Sans Unicode</option>
+                                    <option value="Micorosft Sans Serif" style="font-family: 'Micorosft Sans Serif';">Micorosft Sans Serif</option>
+                                    <option value="Open Sans Hebrew" style="font-family: 'Open Sans Hebrew';">Open Sans Hebrew</option>
+                                    <option value="Palatino Linotype" style="font-family: 'Palatino Linotype';">Palatino Linotype</option>
+                                    <option value="rancho" style="font-family: rancho;">rancho</option>
+                                    <option value="Segoe UI" style="font-family: 'Segoe UI';">Segoe UI</option>
+                                    <option value="System" style="font-family: System;">System</option>
+                                    <option value="Tahoma" style="font-family: Tahoma;">Tahoma</option>
+                                    <option value="Times New Roman" style="font-family: 'Times New Roman';">Times New Roman</option>
+                                    <option value="Terbuchet MS" style="font-family: 'Terbuchet MS';">Terbuchet MS</option>
+                                    <option value="Verdana" style="font-family: Verdana;">Verdana</option>
+                                </select>
+                            </div>
+                            <div class="styleDivider"></div>
+                            <div class="styleCont">
+                                <select id="selectSize" class="changeStyle">
+                                    <option value="1">1</option>
+                                    <option value="2" selected>2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                </select>
+                            </div>
+                            <div class="styleDivider"></div>
+                            <div class="styleCont">
+                                <input id="editorTextColor" type="color" class="borderlessColor changeStyle" />
+                            </div>
+                        </div>
+                    </div>
+                    <br /><br />
+                    <div style="display: inline-flex;">
+                        <div class="optionToggle">
+                            <div class="switch"><input type="checkbox" id="styleQuickComment" /><label for="styleQuickComment"></label></div>
+                        </div>
+                        עצב גם את התגובה הצמודה באשכולות
+                    </div>
+                    <br />
+                    <div style="display: inline-flex;"
+                         data-balloon="לתשומת לבך: בשליחת הודעה פרטית חדשה ניתן לעצב רק את ההדגשה, הקו התחתון והצבע של הטקסט. בצ'אט עצמו כל האפשרויות זמינות."
+                         data-balloon-pos="left"
+                         data-balloon-length="large">
+                        <div class="optionToggle">
+                            <div class="switch"><input type="checkbox" id="stylePrivateChat" /><label for="stylePrivateChat"></label></div>
+                        </div>
+                        עצב גם את הצ'אט הפרטי
+                    </div>
+                    <br />
+                    <div class="button blue saveSettings" data-category="comments">שמור שינויים</div>
+                    <div class="button clearGray resetChanges" data-category="commentStyle">בטל</div>
+                </div>
+                <!--
+                    Multiuser
+                -->
+                <div class="settingsTab" id="multiuser">
+                    <div id="rateLimitLoginNotice">
+                        <h3>שים לב: יכולת ההתחברות שלך מוגבלת</h3>
+                        ניסית להתחבר יותר מדי פעמים ב-15 הדקות האחרונות. כתוצאה מכך, ההתחברות נכשלה.
+                        אנא נסה להתחבר שנית כש-15 דקות יעברו.
+                    </div>
+                    <h2>משתמשים</h2>
+                    התוסף יכול להחליף בשבילך בין המשתמשים שלך. הזן שם משתמש וסיסמה ותוכל להתחבר לחשבון שלך בלחיצת כפתור.<br />
+                    פרטי ההתחברות שלך מאוחסנים אך ורק על מחשב זה.<br /><br />
+                    <table id="userlistContainer" class="niceTable">
+                        <tbody>
+                            <tr class="controlRow">
+                                <td>שם משתמש</td>
+                                <td>סיסמה</td>
+                                <td></td>
+                                <td>התראות</td>
+								<td>ערוך</td>
+
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br />
+                    <div class="button blue" id="addMultiuserRow" data-category="multiuser">הוסף משתמש</div>
+                    <div class="button clearGray" id="logoutCurrent" data-category="multiuser">התנתק</div>
+                </div>
+                <!--
+                    About
+                -->
+                <div class="settingsTab" id="about">
+                    <div id="aboutBannerContainer">
+                        <div id="aboutBanner" style="align-items:center;">
+                            <div id="aboutLogo"><img src="../images/icon128.png" /></div>
+                            <div id="aboutName">
+                                FxPlus+
+                                <div id="aboutDesc">מעולם לא היה קל יותר לגלוש ב-FxP.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <b>גרסה <span id="versionNum">לא ידועה!</span></b>.
+                            <a href="http://goo.gl/forms/38SFbns8EG">דווח על באג</a> או <a href="https://goo.gl/forms/ctPSsxn1eLdFUwbq2">הצע רעיון</a>!
+                        </div>
+                    </div>
+                    <br /><br />
+                    במידה ואתה נהנה מהתוסף, <b>שתף את הכיף!™ </b>והוסף אותו לחתימה שלך.<br />
+                    תוכל למצוא כפתורים נוחים לעשות את זה <a href="https://www.fxp.co.il/profile.php?do=editsignature" target="_blank">בדף עריכת החתימה</a>.
+                    <br /><br />
+                    <!--<a href="http://yo-yoo.co.il/eggs/click.php?eid=108382" target="_blank">
+                        <img src="http://yo-yoo.co.il/eggs/egg_108382.png" />
+                    </a>-->
+                    <a class="communicateSection" id="privateSect" href="https://www.fxp.co.il/private.php?do=newpm&u=967488" target="_blank">
+                        <span class="serviceIcon mdi mdi-mailbox"></span><span class="serviceName">שלח הודעה פרטית</span>
+                    </a>
+                    <br />
+                    <!-- <a class="communicateSection" id="twitterSect" href="https://twitter.com/fxplusplus" target="_blank"> -->
+                        <!-- <span class="serviceIcon mdi mdi-twitter"></span><span class="serviceName">+FxPlus ב-Twitter</span> -->
+                    <!-- </a> -->
+                    <!-- <br /> -->
+                    <!-- <a class="communicateSection" id="bloggerSect" href="https://fxplusplus.blogspot.co.il" target="_blank"> -->
+                        <!-- <span class="serviceIcon mdi mdi-blogger"></span><span class="serviceName">בלוג העדכונים של +FxPlus</span> -->
+                    <!-- </a> -->
+                    <br />
+                    <a class="communicateSection" id="discordSect" href="https://discord.gg/AW7CeG7" target="_blank">
+                        <span class="serviceIcon mdi mdi-discord"></span><span class="serviceName">שרת ה-Discord של +FxPlus</span>
+                    </a>
+                    <br />
+                    <!-- <a class="communicateSection" id="qnaSect" href="https://fxplusplus.blogspot.co.il/p/qna.html" target="_blank"> -->
+                        <!-- <span class="serviceIcon mdi mdi-comment-question-outline"></span><span class="serviceName">שאלות ותשובות</span> -->
+                    <!-- </a> -->
+                    <br />
+                    <a class="communicateSection" id="githubSect" href="https://github.com/SilverTuxedo/FxPlusplus/forks" target="_blank">
+                        <span class="serviceIcon mdi mdi-github-circle"></span><span class="serviceName">ראה את הקוד ב-Github</span>
+                    </a>
+                    <br /><br />
+                    יש בעיה, הצעה או סתם בא לך ליצור איתי קשר? שלח הודעה פרטית או דבר איתי ב-Discord! אשמח לענות על שאלות ולעזור.
+                    <br /><br />
+                    הכתוב בתוסף זה הוא בלשון זכר אך פונה לשני המינים כאחד.
+                    <div style=" font-size: 0.8em; margin-top: 1em;">
+                        חלק מהסמלים בתוסף זה נוצרו על ידי
+                        <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons" target="_blank">Smashicons</a>,
+                        <a href="https://www.flaticon.com/authors/dinosoftlabs" title="DinosoftLabs" target="_blank">DinosoftLabs</a>,
+                        <a href="https://www.freepik.com/" title="Freepik" target="_blank">Freepik</a>
+                        מהאתר
+                        <a href="https://www.flaticon.com/" title="Flaticon" target="_blank">www.flaticon.com</a>
+                        תחת רשיון
+                        <a href="https://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
+                        ובוצעו בהם שינויים.<br />
+                        רקעים סופקו באדיבות על ידי
+                        <a href="https://www.toptal.com/designers/subtlepatterns" title="Toptal Subtle Patterns" target="_blank">Toptal Subtle Patterns</a>
+                        תחת רשיון
+                        <a href="https://creativecommons.org/licenses/by-sa/3.0/" title="Creative Commons BY-SA 3.0" target="_blank">CC BY-SA 3.0</a>
+                        ובוצעו בהם שינויים.
+						<br>
+						<!-- <h3>כפתורים מסוכנים</h3> -->
+						<!-- זהירות! כפתורים אלה מסוכנים ויכולים לגרום לדברים בלתי צפויים ובלתי רצוניים.<br /> -->
+						<!-- <button id="clearLocalStorage">אפס אחסון מקומי</button> -->
+						<!-- <button id="clearSyncStorage">אפס אחסון סנכרוני</button> -->
+						<!-- <button id="printSettingsToConsole">הדפס הגדרות לקונסולה</button> -->
+						<!-- <button id="editSettingsJson">ערוך הגדרות כ-JSON</button> -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <script src="../js/utils.js"></script> -->
+    <script src="md5.js"></script>
+    <!-- <script src="./setting.bundle.js"></script> -->
+	<script src="./j.js"></script>
+	<script src="./settingsv.bundle.js"></script>
+	
+</body>
+</html>
