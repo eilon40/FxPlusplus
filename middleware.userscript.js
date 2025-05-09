@@ -5,17 +5,21 @@
 // @description  מעולם לא היה קל יותר לגלוש ב-FxP.
 // @author       You
 // @match        https://www.fxp.co.il/*
+// @supportURL   https://github.com/eilon40/FxPlusplus
 // @require      https://update.greasyfork.org/scripts/439099/1203718/MonkeyConfig%20Modern%20Reloaded.js
 // @icon         https://lh3.googleusercontent.com/j-CdJwaXX0eoqlMDLLYfbYTuuaFUM5Ep-Mph1UNktCZSYbm665WoIwGGw4d1iXxQWkLMDYior_xS8OKfWCBf1i4srw=s120
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
 // @grant        GM_addElement
+// @grant        GM_getResourceText
 // @grant        GM_registerMenuCommand
 // @grant        GM_addValueChangeListener
 // @run-at       document-start
-// @noframes
+// @resource pms https://update.greasyfork.org/scripts/476628/1259426/fxp%20anti-delete%20PMs.user.js
 // ==/UserScript==
+// @noframes
+// CKEDITOR.tools.callFunction(131,'almoni-dl'); //font
 const cfg = new MonkeyConfig({
     title: 'הגדרות FxPlus+',
     menuCommand: true,
@@ -37,7 +41,7 @@ const cfg = new MonkeyConfig({
             default: false
         },
         resizeSignatures: {
-            label: "הקטן חתימות גדולות אוטומטית",
+            label: "חותך חתימות גדולות",
             type: 'checkbox',
             default: false
         },
@@ -58,11 +62,6 @@ const cfg = new MonkeyConfig({
         },
         showAutoPinned: {
             label: "הצג יותר משלושה אשכולות נעוצים",
-            type: 'checkbox',
-            default: false
-        },
-        whiteSpoiler: {
-            label: "הפעל ספוילרים",
             type: 'checkbox',
             default: false
         },
@@ -96,66 +95,78 @@ const cfg = new MonkeyConfig({
             type: 'text',
             default: ''
         },
-
         smiles: { // https://yoursmiles.org/tsmile/heart/t4524.gif
             label: ":רשימה של קישורים לסמיילים",
             type: "text",
             default: "",
             long: 3
+        },
+        fontSize: {
+            type: 'select',
+            choices: [ 'ללא', 1, 2, 3, 4, 5, 6, 7 ],
+            default: 'ללא'
+        },
+        pms: {
+            label: "מציג הודעות פרטיות שנמחקו",
+            type: "checkbox",
+            default: false
         }
     }
 });
 /*
-https://www.fxp.co.il/member.php?u=789624
 TODO:
 - Implement audio file upload
 - Support multiple users
 - Improve placement of "Delete Post" button
 - Like add http to check
 - disable/enable on the same page and prevent reload
-- add more then 100 frfriends
-- fix result of sign
 - Add features:
   - Auto night mode
   - Auto reader mode
   - BBCode support
   - Hide sticky posts
-  - Show delete private messages option
   - Display forum statistics
-  - custom bg
-https://jsfiddle.net/6p2rnqsf/3/
+  - Add autoStyle to chat
+https://chat.deepseek.com/a/chat/s/2c5d083b-58bf-41c2-9d77-7d650cc012bb
 */
 const rawWindow = unsafeWindow;
 const queryParams = new URLSearchParams(location.search);
 
-function onMatchReady(match, permissions, runAt, callback) {
+function waitForObject(path) {
+    return new Promise((resolve, reject) => {
+        const timer = setInterval(() => {
+            const obj = path.split('.').reduce((o, key) => (o && key in o ? o[key] : undefined), rawWindow);
+            if (typeof obj !== "undefined") {
+                clearInterval(timer);
+                resolve(obj);
+            }
+        }, 100);
+    });
+}
 
-    permissions = permissions.split(", ")
-    let permission = "none";
+function onMatchIfLoggedIn(match, permissions, callback) {
+    rawWindow.LOGGEDIN && onMatch(match, permissions, callback);
+}
 
-    if (!runAt) runAt = "idle";
-    if (permissions) permission = permissions.shift();
-
-    const args = permissions.map(permission => cfg.get(permission));
-    const docReady = /complete|interactive/.test(document.readyState);
-    const hasPermission = permission === "none" ? true : cfg.get(permission);
-
+function onMatch(match, permission, callback) {
+    // console.log(match, permission, callback);
+    const hasPermission = permission === "none" || cfg.get(permission);
     if (!shouldRun(match) || !hasPermission) return;
 
-    let teardown = () => {};
+    const docReady = /complete|interactive/.test(document.readyState);
+    const runImmediately = !callback.toString().includes("document");
 
+    let teardown = () => {};
     const executeFeature = () => {
         teardown();
-        teardown = callback(...args) || (() => {});
+        teardown = callback() || (() => {});
     };
 
-    console.log(`[runAt: ${runAt}, permission: ${permission}]`);
-
-    if (runAt === "start" || docReady) {
+    if (runImmediately || docReady) {
         executeFeature();
+    } else {
+        document.addEventListener('DOMContentLoaded', executeFeature);
     }
-
-    document.addEventListener('DOMContentLoaded', executeFeature);
 
     GM_addValueChangeListener(permission, (key, oldVal, newVal) => {
         const func = newVal ? executeFeature : teardown;
@@ -163,13 +174,8 @@ function onMatchReady(match, permissions, runAt, callback) {
     });
 }
 
-function onMatchIfLoggedIn(match, permissions, callback) {
-    const runAt = callback.toString().includes('friendIds') ? 'start' : "idle";
-    rawWindow.LOGGEDIN && onMatchReady(match, permissions, runAt, callback)
-}
-
 function injectStyle(match, permissions, css) {
-    onMatchReady(match, permissions, "start", function() {
+    onMatch(match, permissions, function() {
         const styleElement = GM_addStyle(css);
         return () => styleElement?.remove();
     });
@@ -182,8 +188,9 @@ function shouldRun(matchPattern) {
 }
 
 function fetcher(url) {
-    return fetch(url).then(response => response.text())
+    return fetch(url).then(response => response.text());
 }
+
 // Author ID: 967488
 injectStyle("forumdisplay", "showAutoPinned", "#stickies li.threadbit:nth-child(n+4) { display: list-item !important; } .morestick { display: none !important; }");
 injectStyle("*", "hideAds", "#adfxp, #related_main, .trc_related_container, .trc_spotlight_widget, .videoyoudiv, .OUTBRAIN { display: none !important }");
@@ -192,6 +199,8 @@ injectStyle("/(?:index.php)?", "hideCategories", `${cfg.get("hideCategories").sp
 injectStyle("/(?:index.php)?", "hideArticles", "#slide { height:auto !important; } .mainsik { display: none; }");
 injectStyle("/(?:index.php)?", "hideBigImages", ".big-image-class { display: none; }");
 injectStyle("/(?:index.php)?", "hideGames", "#slide ~ div h1, .fxp2021_Games { display: none !important;");
+// חותך חתימות גדולות לגודל המותר וזה תלוי במשתמש במקום באתר לשנות את החתימה שתתאים
+injectStyle("show(post|thread)|member.php", "resizeSignatures", ".signaturecontainer { max-width: 500px; max-height: 295px; overflow: hidden; }");
 
 onMatchIfLoggedIn("private_chat.php?do=showpm|show(post|thread)", "disableLiveTyping", function() {
     const originalSendTypingInThread = rawWindow?.sendUserIsTypingInShowthread;
@@ -267,15 +276,32 @@ onMatchIfLoggedIn("show(post|thread)", "showFriends", function() {
                 return console.log('Friends list is still fresh, skipping refresh.');
             }
         }
-        const html = await fetcher("https://www.fxp.co.il/profile.php?do=buddylist&pp=100");
+        let allFriendIds = [], temp = []
+        let page = 1, match;
         const regex = /<h4><a href="member\.php\?u=(\d+)"/g;
-        const friendMatches = html.matchAll(regex);
-        const friendIds = friendMatches.map(match => match[1]) || [];
-        console.log('Fetched friend IDs:', friendIds);
+        while (temp.size < 100) {
+            temp = [];
+            const url = `https://www.fxp.co.il/profile.php?do=buddylist&pp=100&page=${page}`;
+            const html = await fetcher(url);
 
-        GM_setValue('friendIds', JSON.stringify(friendIds));
+            while ((match = regex.exec(html)) !== null) {
+                temp.push(match[1]);
+            }
+            allFriendIds = allFriendIds.concat(temp);
+            console.log(`Page ${page}: Total friend IDs collected so far: ${allFriendIds.size}`);
+
+            // If the response seems to be exhausted or doesn't bring in new friends, break.
+            if (!match) break;
+
+            page++;
+        }
+
+        console.log('Fetched friend IDs:', allFriendIds);
+
+        GM_setValue('friendIds', JSON.stringify(allFriendIds));
         GM_setValue(storageKey, Date.now());
     })();
+
     const friendIds = JSON.parse(GM_getValue("friendIds", '[]'));
     if (!friendIds) return;
     console.log('here', friendIds);
@@ -301,9 +327,7 @@ onMatchIfLoggedIn("*", "audioChange", function() {
             }
             this.setAttribute('src', value);
         },
-        get: function () {
-            return this.getAttribute('src');
-        },
+        get: () => this.getAttribute('src'),
         configurable: true,
         enumerable: true,
     });
@@ -311,46 +335,34 @@ onMatchIfLoggedIn("*", "audioChange", function() {
         isFeatureEnabled = false;
     }
 })
-onMatchIfLoggedIn("show(post|thread)", "smiles", function() {
-    function waitForVBEditor() {
-        return new Promise(resolve => {
-            const interval = setInterval(() => {
-                if (typeof rawWindow.vB_Editor !== 'undefined') {
-                    clearInterval(interval);
-                    resolve(rawWindow.vB_Editor);
-                }
-            }, 100);
-        });
-    }
-    let temp, tmp;
-    waitForVBEditor().then(object => {
-        const editor = Object.values(rawWindow.vB_Editor).at(0);
-        temp = editor.config.smiley_descriptions;
+onMatchIfLoggedIn("show(post|thread)", "smiles", async function() {
+    const images = cfg.get("smiles").trim().split('\n');
+    if (images.length < 1) return;
+
+    const editor = await waitForObject("vB_Editor.vB_Editor_QR");
+    console.log("vB_Editor is available:", editor);
+    let temp = editor.config.smiley_descriptions,
         tmp = editor.config.smiley_images;
-        const images = cfg.get("smiles").trim().split('\n');
-        for (const image of images) {
-            if (!image) continue;
-            editor.config.smiley_descriptions.push(`[img]${image}[/img]`);
-            editor.config.smiley_images.push(`https://wsrv.nl/?url=${image}&w=30`);
-        }
-    });
+    for (const image of images) {
+        if (!image) continue;
+        editor.config.smiley_descriptions.push(`[img]${image}[/img]`);
+        editor.config.smiley_images.push(`https://wsrv.nl/?url=${image}&w=30`);
+    }
 
     return () => {
-        waitForVBEditor().then(object => {
-            const editor = Object.values(rawWindow.vB_Editor).at(0);
-            editor.config.smiley_descriptions = temp;
-            editor.config.smiley_images = tmp;
-        });
+        editor.config.smiley_descriptions = temp;
+        editor.config.smiley_images = tmp;
     }
 })
 onMatchIfLoggedIn("show(post|thread)", "showLikeLimit", function() {
     const db = 'likes' + (window.USER_ID_FXP || '0');
-    const likeLimit = 10;
+    const likeLimit = 15;
     const selector = '.button-like-holder > span[onclick="makelike(this.id);"]';
 
     let likes = JSON.parse(GM_getValue(db, '[]'));
     let styleElement;
     const updateLikeButton = () => {
+        console.log(likes);
         if (likes.length >= likeLimit) {
             styleElement = GM_addStyle(`${selector} { background-image: url("https://em-content.zobj.net/source/google/387/broken-heart_1f494.png"); }`);
         } else {
@@ -385,22 +397,15 @@ onMatchIfLoggedIn("show(post|thread)", "showLikeLimit", function() {
 
     return () => styleElement?.remove();
 })
-onMatchReady("show(post|thread)", "whiteSpoiler", "idle", function() {
-    const whiteElements = document.querySelectorAll("[color='#ffffff']");
-    whiteElements.forEach(element => {
-        const table = element.closest('table');
-        if (table?.style.backgroundColor !== '') {
-            element.classList.add('whiteSpoiler');
-        }
-    });
-    return () => {
-        whiteElements.forEach(element => {
-            const table = element.closest('table');
-            table && element.classList.remove('whiteSpoiler');
-        });
-    }
-});
-onMatchReady("show(post|thread)", "showDeletedPost", "idle", function() {
+onMatchIfLoggedIn("show(post|thread)", "none", async function() {
+    const size = cfg.get("fontSize");
+    if (size === "ללא") return;
+    const editor = await waitForObject("CKEDITOR.tools");
+    editor.callFunction(128, size);
+    editor.callFunction(53, size);
+})
+
+onMatch("show(post|thread)", "showDeletedPost", function() {
     const targetPostId = queryParams.get('p');
     const isPostExist = document.contains(document.getElementById('post_' + targetPostId));
     if (!targetPostId || isPostExist) {
@@ -426,7 +431,7 @@ onMatchReady("show(post|thread)", "showDeletedPost", "idle", function() {
 
     return () => newElement?.remove();
 });
-onMatchReady("forumdisplay", "connectedStaff", "idle", function() {
+onMatch("forumdisplay", "connectedStaff", function() {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '10px');
     svg.setAttribute('height', '10px');
@@ -454,69 +459,110 @@ onMatchReady("forumdisplay", "connectedStaff", "idle", function() {
         usernameElements.forEach(({ lastChild }) => lastChild.tagName === 'svg' && lastChild.remove());
     }
 });
-onMatchIfLoggedIn("show(post|thread)|member.php", "resizeSignatures", function() {
-    function resizeSignature(signatureElement) {
-        if (signatureElement.style.display === "none") return;
-        signatureElement.style.height = "auto";
-        signatureElement.style.transform = "scale(1, 1)";
-        signatureElement.removeAttribute("title");
 
-        const parentSignature = signatureElement.closest(".signature");
-        parentSignature.style.overflow = "visible";
-        parentSignature.style.height = "auto";
+//https://greasyfork.org/en/scripts/476628-fxp-anti-delete-pms
+onMatchIfLoggedIn("do=showpm&pmid=", "pms", async function() {
+    await waitForObject("socket");
+    new Function(GM_getResourceText("pms")).apply(rawWindow);
+})
 
-        const signHeight = signatureElement.offsetHeight;
 
-        if (signHeight > 295) {
-            const scaleFactor = 295 / signHeight;
-            signatureElement.style.transformOrigin = "top";
-            signatureElement.style.transform = `scale(${scaleFactor}, ${scaleFactor})`;
-            parentSignature.style.overflow = "hidden";
-            parentSignature.style.height = "295px";
-            signatureElement.setAttribute("title", "חתימה זו הוקטנה באופן אוטומטי.");
+function checkNewComments(threadbit) {
+    const threadComments = GM_getValue("threadComments", []);
+    const threadId = getThreadIdFromLink(threadbit.find(".title").attr("href"));
+
+    let previousCommentCount = -1;
+
+    if (checkTrackThreadUnread(threadId)) {
+        // Look for the thread in the saved data
+        for (const thread of threadComments) {
+            if (thread.id === threadId) {
+                previousCommentCount = thread.comments;
+                break;
+            }
+        }
+
+        // If previous comments were found, compare to current count
+        if (previousCommentCount > -1) {
+            const currentCommentCount = getThreadbitComments(threadbit);
+            const newComments = currentCommentCount - previousCommentCount;
+
+            // If there are new comments, tag the thread
+            if (newComments > 0) tagNewComments(threadbit, newComments);
         }
     }
-    const observerSignatures = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.attributeName === "src") {
-                resizeSignature(mutation.target.closest(".signaturecontainer"));
-                if (document.querySelectorAll(".signaturecontainer img[src='clear.gif']").length === 0) {
-                    observerSignatures.disconnect();
-                }
-            }
-        });
-    });
+}
 
-    document.querySelectorAll(".signaturecontainer").forEach(resizeSignature);
+//adds a new comments tag to threadbits that have them
+function tagNewComments(threadbit, num) {
+    var balloonText = "יש ";
+    if (num === 1) balloonText += "תגובה אחת חדשה ";
+    else balloonText += num + " תגובות חדשות ";
+    balloonText += "שלא קראת באשכול זה.\nלחץ כדי לסמן כנקרא."
 
-    document.querySelectorAll(".signaturecontainer img").forEach(function(img) {
-        observerSignatures.observe(img, {
-            attributes: true
-        });
+    const indicator = document.createElement('span');
+    indicator.classList.add('newCommentsIndicator', 'balloonNoBorder');
+    indicator.setAttribute('data-balloon-pos', 'left');
+    indicator.setAttribute('data-balloon', balloonText);
+    indicator.setAttribute('data-balloon-length', 'medium');
+    indicator.textContent = `(${num})`;
+    indicator.addEventListener('click', removeNewCommentTag);
 
-        const loadHandler = function() {
-            resizeSignature(img.closest(".signaturecontainer"));
-        };
+    const titleElem = threadbit.querySelector('.title');
+    titleElem.insertAdjacentElement('afterend', indicator);
+}
 
-        if (img.complete) {
-            loadHandler();
-        } else {
-            img.addEventListener('load', loadHandler, {
-                once: true
-            });
-        }
-    });
+//returns the number of comments that are read in a thread
+function getCommentsReadCountOfThread(id, callback) {
+    const threadComments = GM_getValue("threadComments", []);
+    const thread = threadComments.find(item => item.id == id);
+    const commentNum = thread ? thread.comments : -1;
+    callback(commentNum);
+}
 
-    document.querySelectorAll(".signaturecontainer video").forEach(function(video) {
-        video.addEventListener('loadeddata', function() {
-            resizeSignature(video.closest(".signaturecontainer"));
-        }, {
-            once: true
-        });
-    });
-})
+//remove the new comments in brackets
+function removeNewCommentTag(tagElement) {
+    const threadbit = tagElement.closest('.threadbit');
+    const comments = getThreadbitComments(threadbit);
+    const titleLink = threadbit.querySelector('.title a');
+    const id = getThreadIdFromLink(titleLink.getAttribute('href'));
+
+    updateThreadCommentCount(id, comments);
+
+    tagElement.style.transition = 'height 0.3s ease, opacity 0.3s ease';
+    tagElement.style.overflow = 'hidden';
+    tagElement.style.height = `${tagElement.offsetHeight}px`; // קיבוע הגובה הנוכחי
+    void tagElement.offsetHeight;
+    tagElement.style.height = '0';
+    tagElement.style.opacity = '0';
+
+    setTimeout(tagElement.remove, 300);
+    updateThreadCommentCount(id, comments);
+}
+
+//compares the comment given with the number of read comments already tracked, and updates accordingly
+function compareReadCommentsWithLast(threadId, lastIndex) {
+    const threadComments = GM_getValue("threadComments", []);
+    const thread = threadComments.find(item => item.id == threadId);
+    const knownComments = thread ? thread.comments : -1;
+
+    if (knownComments < lastIndex - 1) {
+        const newCount = lastIndex - 1;
+        updateThreadCommentCount(threadId, newCount);
+        console.log(`updated comment num ${threadId} to ${newCount}`);
+    }
+}
+
+//returns how many read comments there are for a thread
+function getReadComments(threadId, callback){
+    const threadComments = GM_getValue("threadComments", []);
+    const thread = threadComments.find(item => item.id == threadId);
+    const commentNum = thread ? thread.comments : -1;
+    callback(commentNum);
+}
+
 /*
-onMatchReady("*", "nightMode", "start", function(hideBigImages, hideGames) {
+onMatchReady("*", "nightMode", function(hideBigImages, hideGames) {
     let styleElement;
     function toggleDarkMode(isEnabled) {
         const newValue = isEnabled ? "1" : "0";
