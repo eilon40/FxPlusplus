@@ -1,0 +1,28 @@
+{
+   "manifest_version":3,
+   "name":"FxPlus+",
+   "version":"1.0",
+   "description":"מעולם לא היה קל יותר לגלוש ב-FxP.",
+   "permissions":[
+      "storage",
+      "scripting"
+   ],
+   "host_permissions":[
+      "https://www.fxp.co.il/*"
+   ],
+   "content_scripts":[
+      {
+         "matches":[
+            "https://www.fxp.co.il/*"
+         ],
+         "js":[
+            "content.js"
+         ],
+         "run_at":"document_start",
+         "all_frames":false
+      }
+   ],
+   "background":{
+      "service_worker":"background.js"
+   }
+}
