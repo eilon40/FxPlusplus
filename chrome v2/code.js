@@ -113,6 +113,7 @@ document.addEventListener('keydown', function (e) {
 CKEDITOR.tools.callFunction(41, this); //131,'almoni-dl'
 The system that automatically disables and enables the feature is currently not working in either version.
 TODO:
+- fix hide in index
 - Implement audio file upload
 - Support multiple users
 - Like add http to check

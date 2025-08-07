@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 
 if not exist dist (
     mkdir dist
@@ -6,12 +7,25 @@ if not exist dist (
 
 > newline.tmp echo.
 
-echo Building Chrome Extension and Userscript...
+echo Building Chrome Extension and Userscript with minification...
 
-copy /b background.js dist\background.js > nul
+curl -X POST -s --data-urlencode "input@background.js" https://www.toptal.com/developers/javascript-minifier/api/raw > dist\background.js
+
 copy /b manifest.json dist\manifest.json > nul
-copy /b chromeUtils.js + newline.tmp + MonkeyConfig.js + newline.tmp + code.js dist\content.js > nul
-copy /b userscriptMeta.txt + newline.tmp + code.js dist\userscript.js > nul
+
+(
+  curl -X POST -s --data-urlencode "input@chromeUtils.js" https://www.toptal.com/developers/javascript-minifier/api/raw
+  echo.
+  curl -X POST -s --data-urlencode "input@MonkeyConfig.js" https://www.toptal.com/developers/javascript-minifier/api/raw
+  echo.
+  curl -X POST -s --data-urlencode "input@code.js" https://www.toptal.com/developers/javascript-minifier/api/raw
+) > dist\content.js
+
+(
+  type userscriptMeta.txt
+  echo.
+  curl -X POST -s --data-urlencode "input@code.js" https://www.toptal.com/developers/javascript-minifier/api/raw
+) > dist\userscript.js
 
 del newline.tmp
 
