@@ -4,12 +4,17 @@
    "version":"1.0",
    "description":"מעולם לא היה קל יותר לגלוש ב-FxP.",
    "permissions":[
+      "tabs",
+      "omnibox",
       "storage",
       "scripting"
    ],
    "host_permissions":[
       "https://www.fxp.co.il/*"
    ],
+   "omnibox": {
+      "keyword": "fxp"
+   },
    "content_scripts":[
       {
          "matches":[

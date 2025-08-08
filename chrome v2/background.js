@@ -28,3 +28,14 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 
 	return true;
 });
+
+// chrome.omnibox: onInputCancelled, onInputChanged, onDeleteSuggestion, setDefaultSuggestion
+chrome.omnibox.onInputEntered.addListener(async function (text) {
+	const newURL = 'https://www.google.com/search?q=' + encodeURIComponent('site:fxp.co.il ' + text)
+	const [tab] = await chrome.tabs.query({
+		active: true,
+        currentWindow: true
+    });
+
+	chrome.tabs.update(tab.id, { url: newURL });
+});    
