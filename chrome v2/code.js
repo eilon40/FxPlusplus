@@ -99,16 +99,16 @@ const cfg = new MonkeyConfig({
             type: "checkbox",
             default: false
         },
-        // startTime: {
-        //     label: 'Start Time:',
-        //     type: 'time',
-        //     default: '7:00'
-        // },
-        // endTime: {
-        //     label: 'End Time:',
-        //     type: 'time',
-        //     default: '23:50'
-        // }
+        startTime: {
+            label: 'Start Time:',
+            type: 'text',
+            default: '7:00'
+        },
+        endTime: {
+            label: 'End Time:',
+            type: 'text',
+            default: '23:50'
+        }
     }
 });
 
@@ -155,15 +155,6 @@ function waitForObject(path) {
 function onMatchIfLoggedIn(match, permissions, callback) {
     rawWindow.LOGGEDIN && onMatch(match, permissions, callback);
 }
-
-// window.addEventListener('storage', (e) => {
-// 	console.log('Storage changed!');
-// 	console.log('Key:', e.key);
-// 	console.log('Old Value:', e.oldValue);
-// 	console.log('New Value:', e.newValue);
-// 	console.log('Storage Area:', e.storageArea);
-// 	console.log('URL:', e.url);
-// });
 
 function onMatch(match, permission, callback) {
     const hasPermission = permission === "none" || cfg.get(permission);
@@ -281,50 +272,43 @@ onMatchIfLoggedIn("signature", "none", function() {
     const smilieBox = document.querySelector('form[action*="signature"] .editor_smiliebox');
     smilieBox.parentNode.insertBefore(creditAddon, smilieBox);
 });
+onMatchIfLoggedIn("*", "showFriends", async function() {
+    const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const storageKey = "refreshFriends";
+    const storedTime = GM_getValue(storageKey);
+    if (storedTime) {
+        const timeSinceLastRefresh = new Date().getTime() - new Date(storedTime).getTime();
+        if (timeSinceLastRefresh < REFRESH_INTERVAL) {
+            return console.log('Friends list is still fresh, skipping refresh.');
+        }
+    }
+    let allFriendIds = [], temp = []
+    let page = 1, match;
+    const regex = /<h4><a href="member\.php\?u=(\d+)"/g;
+    while (temp.size < 100) {
+        temp = [];
+        const url = `https://www.fxp.co.il/profile.php?do=buddylist&pp=100&page=${page}`;
+        const html = await fetcher(url);
+
+        while ((match = regex.exec(html)) !== null) temp.push(match[1]);
+
+        allFriendIds = allFriendIds.concat(temp);
+        console.log(`Page ${page}: Total friend IDs collected so far: ${allFriendIds.size}`);
+        
+        if (!match) break;
+        page++;
+    }
+
+    console.log('Fetched friend IDs:', allFriendIds);
+
+    GM_setValue('friendIds', JSON.stringify(allFriendIds));
+    GM_setValue(storageKey, Date.now());
+})
 onMatchIfLoggedIn("show(post|thread)", "showFriends", function() {
-    (async () => {
-        const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes in milliseconds
-        const storageKey = "refreshFriends";
-        const storedTime = GM_getValue(storageKey);
-        if (storedTime) {
-            const timeSinceLastRefresh = new Date().getTime() - new Date(storedTime).getTime();
-            if (timeSinceLastRefresh < REFRESH_INTERVAL) {
-                return console.log('Friends list is still fresh, skipping refresh.');
-            }
-        }
-        let allFriendIds = [],
-            temp = []
-        let page = 1,
-            match;
-        const regex = /<h4><a href="member\.php\?u=(\d+)"/g;
-        while (temp.size < 100) {
-            temp = [];
-            const url = `https://www.fxp.co.il/profile.php?do=buddylist&pp=100&page=${page}`;
-            const html = await fetcher(url);
-
-            while ((match = regex.exec(html)) !== null) {
-                temp.push(match[1]);
-            }
-            allFriendIds = allFriendIds.concat(temp);
-            console.log(`Page ${page}: Total friend IDs collected so far: ${allFriendIds.size}`);
-
-            // If the response seems to be exhausted or doesn't bring in new friends, break.
-            if (!match) break;
-
-            page++;
-        }
-
-        console.log('Fetched friend IDs:', allFriendIds);
-
-        GM_setValue('friendIds', JSON.stringify(allFriendIds));
-        GM_setValue(storageKey, Date.now());
-    })();
-
     const friendIds = JSON.parse(GM_getValue("friendIds", '[]'));
     if (!friendIds) return;
-    let css = friendIds.map(id => '.username[href$="' + id + '"]::after').join(', ')
-    let styleElement = GM_addStyle(`
-        ${css} {
+    const styleElement = GM_addStyle(`
+        ${friendIds.map(id => '.username[href$="' + id + '"]::after').join(', ')} {
             content: "";
             display: inline-block;
             width: 20px;
@@ -514,6 +498,7 @@ onMatch("*", "showCounts", function() {
 /*
 the old messy code with all those functions
 maybe one day I'll have AI rewrite it in cleaner vanilla JavaScript with fewer indentations.
+https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog
 */
 onMatch("forumdisplay", "showForumStats", function() {
     GM_addStyle(`
@@ -1001,50 +986,62 @@ onMatch("forumdisplay", "showForumStats", function() {
         }));
     return () => document.querySelectorAll("#forumStatsContainer, #popupBox").forEach(e => e.remove())
 })
-
 onMatch("*", "nightMode", function () {
     function toggleDarkMode(isEnabled) {
         const newValue = isEnabled ? "1" : "0";
         const date = new Date();
-        date.setTime(new Date().getTime() + 172800000);
+        date.setTime(Date.now() + 172800000);
         document.cookie = `bb_darkmode=${newValue}; expires=${date.toUTCString()}`;
+        console.log(`Night mode cookie set to: ${newValue}`);
     }
+
     function timeInMinutes(timeString) {
         if (!timeString) return 0;
         const [hours, minutes] = timeString.split(':').map(Number);
         return hours * 60 + minutes;
     }
+
     function isNightModeEnabled() {
-        const cookies = document.cookie.split(';');
-        return cookies.some(cookie => cookie.trim().startsWith('bb_darkmode=1'));
+        return document.cookie.split(';').some(cookie => cookie.trim() === 'bb_darkmode=1');
     }
 
-    const now = new Date();
-    const minutesCurrent = now.getHours() * 60 + now.getMinutes();
+    const darkModeThemeEl = document.querySelector("#darkmode_theme");
 
-    const minutesStart = timeInMinutes('7:00');
-    const minutesEnd = timeInMinutes('23:50');
+    function exec() {
+        const now = new Date();
+        const minutesCurrent = now.getHours() * 60 + now.getMinutes();
 
-    const exec = function() {
+        const minutesStart = timeInMinutes(cfg.get("startTime"));
+        const minutesEnd = timeInMinutes(cfg.get("endTime"));
+
         const rangeActive = minutesEnd < minutesStart
-        ? (minutesStart <= minutesCurrent || minutesCurrent < minutesEnd)
-        : (minutesCurrent >= minutesStart && minutesCurrent < minutesEnd);
+            ? (minutesCurrent >= minutesStart || minutesCurrent < minutesEnd)
+            : (minutesCurrent >= minutesStart && minutesCurrent < minutesEnd);
 
-        if (!isNightModeEnabled() && !rangeActive) {
+        const nightModeActive = isNightModeEnabled();
+
+        if (nightModeActive && !rangeActive) {
+            console.log('Disabling night mode...');
+            darkModeThemeEl?.classList?.remove('ofset');
             document.body.classList.remove('darkmode');
+            document.querySelector('[href*="darkmode"]')?.remove();
             toggleDarkMode(false);
-        } else if (rangeActive) {
+        } else if (!nightModeActive && rangeActive) {
+            console.log('Enabling night mode...');
+            darkModeThemeEl?.classList?.add('ofset');
             document.body.classList.add('darkmode');
-            GM_addStyle('@import url("//static.fcdn.co.il/dyn/projects/css/desktop/darkmode.css");');
+            if (!document.querySelector('[href*="darkmode"]')) {
+                GM_addElement("link", {
+                    rel: 'stylesheet',
+                    href: '//static.fcdn.co.il/dyn/projects/css/desktop/darkmode.css'
+                });
+            }
             toggleDarkMode(true);
         }
-
-    }
-    exec()
-    const interval = setInterval(exec, 15 * 1000)
-
-    return () => {
-        clearInterval(interval);
-        interval = null;
     };
+
+    exec();
+    const interval = setInterval(exec, 15 * 1000);
+
+    return () => clearInterval(interval);
 });
