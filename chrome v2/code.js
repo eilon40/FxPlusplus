@@ -93,7 +93,22 @@ const cfg = new MonkeyConfig({
             label: 'הצג סטטיסטיקות פורומים',
             type: "checkbox",
             default: false
-        }
+        },
+        nightMode: {
+            label: 'הפעל את מצב הלילה אוטומטית',
+            type: "checkbox",
+            default: false
+        },
+        // startTime: {
+        //     label: 'Start Time:',
+        //     type: 'time',
+        //     default: '7:00'
+        // },
+        // endTime: {
+        //     label: 'End Time:',
+        //     type: 'time',
+        //     default: '23:50'
+        // }
     }
 });
 
@@ -113,13 +128,11 @@ document.addEventListener('keydown', function (e) {
 CKEDITOR.tools.callFunction(41, this); //131,'almoni-dl'
 The system that automatically disables and enables the feature is currently not working in either version.
 TODO:
-- fix hide in index
 - Implement audio file upload
 - Support multiple users
 - Like add http to check
 - disable/enable on the same page and prevent reload
 - Add features:
-  - Auto night mode
   - Auto reader mode
   - BBCode support
   - Hide sticky posts
@@ -200,7 +213,7 @@ injectStyle("*", "hideAds", "#adfxp, #related_main, .trc_related_container, .trc
 injectStyle("*", "hideNagish", ".nagish-button { display: none; }");
 injectStyle("/(?:index.php)?", "hideCategories", `${cfg.get("hideCategories").split(", ").map(cId => `.hp_category:has(a[href="forumdisplay.php?f=${cId}"])`).join(',')} { display: none }`) // #cat${cId}, .hi4 { height: 337px }
 injectStyle("/(?:index.php)?", "hideArticles", "#slide { height:auto !important; } .mainsik { display: none; }");
-injectStyle("/(?:index.php)?", "hideBigImages", ".big-image-class { display: none; }");
+injectStyle("/(?:index.php)?", "hideBigImages", "#slide { height:auto !important; } .big-image-class { display: none; }");
 injectStyle("/(?:index.php)?", "hideGames", "#slide ~ div h1, .fxp2021_Games { display: none !important;");
 // חותך חתימות גדולות לגודל המותר וזה תלוי במשתמש במקום באתר לשנות את החתימה שתתאים
 injectStyle("show(post|thread)|member.php", "resizeSignatures", ".signaturecontainer { max-width: 500px; max-height: 295px; overflow: hidden; }");
@@ -988,21 +1001,19 @@ onMatch("forumdisplay", "showForumStats", function() {
         }));
     return () => document.querySelectorAll("#forumStatsContainer, #popupBox").forEach(e => e.remove())
 })
-/*
-onMatchReady("*", "nightMode", function(hideBigImages, hideGames) {
-    let styleElement;
+
+onMatch("*", "nightMode", function () {
     function toggleDarkMode(isEnabled) {
         const newValue = isEnabled ? "1" : "0";
         const date = new Date();
         date.setTime(new Date().getTime() + 172800000);
-        document.cookie = `bb_darkmode=${newValue}; expires=${date.toUTCString()}`
+        document.cookie = `bb_darkmode=${newValue}; expires=${date.toUTCString()}`;
     }
     function timeInMinutes(timeString) {
         if (!timeString) return 0;
         const [hours, minutes] = timeString.split(':').map(Number);
         return hours * 60 + minutes;
     }
-
     function isNightModeEnabled() {
         const cookies = document.cookie.split(';');
         return cookies.some(cookie => cookie.trim().startsWith('bb_darkmode=1'));
@@ -1011,28 +1022,29 @@ onMatchReady("*", "nightMode", function(hideBigImages, hideGames) {
     const now = new Date();
     const minutesCurrent = now.getHours() * 60 + now.getMinutes();
 
-    let rangeActive = false;
-    const minutesStart = timeInMinutes('17:00'); //settings.autoNightmode.start
+    const minutesStart = timeInMinutes('7:00');
     const minutesEnd = timeInMinutes('23:50');
-    //TODO ADD setTimeout
 
-    rangeActive = minutesEnd < minutesStart ?
-        (minutesStart <= minutesCurrent || minutesCurrent < minutesEnd) :
-    (minutesCurrent >= minutesStart && minutesCurrent < minutesEnd);
+    const exec = function() {
+        const rangeActive = minutesEnd < minutesStart
+        ? (minutesStart <= minutesCurrent || minutesCurrent < minutesEnd)
+        : (minutesCurrent >= minutesStart && minutesCurrent < minutesEnd);
 
-    if (!isNightModeEnabled() && !rangeActive) {
-        toggleDarkMode(false);
-    } else if (rangeActive) {
-        toggleDarkMode(true);
+        if (!isNightModeEnabled() && !rangeActive) {
+            document.body.classList.remove('darkmode');
+            toggleDarkMode(false);
+        } else if (rangeActive) {
+            document.body.classList.add('darkmode');
+            GM_addStyle('@import url("//static.fcdn.co.il/dyn/projects/css/desktop/darkmode.css");');
+            toggleDarkMode(true);
+        }
+
     }
-    return () => {};
-})
-// const nightModeEnabled = localStorage.getItem("nightmodeEnabled") === "true";
-// const temp = nightModeEnabled && settings.customBg.night.length > 0 ?
-//         name: 'הפעל את מצב הלילה אוטומטית משעה <input type="time" id="nightStartTime" value="17:05" /> עד שעה <input type="time" id="nightEndTime" value="23:30" />',
-//         default: {
-// 			active: false,
-// 			start: "17:05",
-// 			end: "23:30"
-// 		}
-*/
+    exec()
+    const interval = setInterval(exec, 15 * 1000)
+
+    return () => {
+        clearInterval(interval);
+        interval = null;
+    };
+});
