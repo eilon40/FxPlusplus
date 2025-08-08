@@ -94,6 +94,11 @@ const cfg = new MonkeyConfig({
             type: "checkbox",
             default: false
         },
+        weeklyChallenge: {
+            label: 'מציג אתגרים שבועיים בתוך הפורום',
+            type: "checkbox",
+            default: false
+        },
         nightMode: {
             label: 'הפעל את מצב הלילה אוטומטית',
             type: "checkbox",
@@ -1044,4 +1049,78 @@ onMatch("*", "nightMode", function () {
     const interval = setInterval(exec, 15 * 1000);
 
     return () => clearInterval(interval);
+
 });
+
+onMatch("forumdisplay", "weeklyChallenge", async function() {
+    const target = document.querySelector(".flo > .description_clean");
+
+    const container = GM_addElement(target, "div", {
+        style: "direction: rtl; text-align: right; max-width: 300px; padding: 10px;"
+    });
+
+    GM_addElement(container, "h3", {
+            textContent: "אשכול השבוע",
+            style: "margin-top: 0;"
+        });
+
+    GM_addElement(container, "div", {
+        id: "thread-week",
+        textContent: "טוען...",
+        style: "margin-bottom: 12px; color: #222;"
+    });
+    // GM_addElement(container, "img", {
+    //     src: "https://i.imagesup.co/images2/84dc2f601852f01ca8bba4bd395a4d5756784812.png",
+    //     width:"150px"
+    // })
+    GM_addElement(container, "h3", {
+        textContent: "משתמש השבוע"
+    });
+
+    GM_addElement(container, "div", {
+        id: "member-week",
+        textContent: "טוען...",
+        style: "color: #222;"
+    });
+
+
+    const stickies = Array.from(document.querySelectorAll('.stickies .threadinfo'))
+    .filter(node => /אשכול השבוע|משקיען השבוע|7 ימי ווינר|משקיען ואשכול/.test(node.textContent))
+    .map(node => node.parentElement);
+    
+    if (stickies.length > 1 || stickies.length === 0) {
+        // maybe in the future, this will handle values greater than 1
+        container.style.display = "none";
+        return;
+    }
+    const domParser = new DOMParser();
+    const element = stickies.shift().querySelector('a.lastpostdate');
+    const url = element.href?.replace(/#post.*/, '');
+    if (!url) {
+        const errorBox = GM_addElement(container, "div", {
+            id: "weekly-error",
+            style: "color: red; margin-top: 10px;"
+        });
+
+        errorBox.innerHTML = 'האשכול השבועי לא מכיל אף הכרזה, יש לפנות <a href="https://www.fxp.co.il/forumdisplay.php?f=18" target="_blank">צוות תמיכה</a>';
+        return;
+    }
+    const response = await fetcher(url + "&pp=1");
+    const doc = domParser.parseFromString(response, "text/html");
+
+    const threads = doc.querySelectorAll(".postcontent a[href*='showthread.php']");
+    const members = doc.querySelectorAll(".postcontent a[href*='member.php']");
+    /*
+    TODO:
+    - Handle multiple thread links properly current implementation only processes the first link and does not cover all cases.
+    - Add a time check mechanism to update the data only if there are changes or after a certain interval.
+    - Add error handling for the fetch request and DOM parsing to avoid silent failures.
+    - Implement caching to store fetched data temporarily and reduce repeated requests.
+    - Replace textContent below with real URL
+    */
+    let thread = threads.length > 0 ? threads[0].textContent.trim() : "לא נמצא אשכול";
+    let member = members.length > 0 ? members[0].textContent.trim() : "לא נמצא משתמש";
+
+    document.getElementById("thread-week").textContent = thread;
+    document.getElementById("member-week").textContent = member;
+})
