@@ -1053,6 +1053,20 @@ onMatch("*", "nightMode", function () {
 });
 
 onMatch("forumdisplay", "weeklyChallenge", async function() {
+    const getTodayDMY = () => new Date().toLocaleDateString('en-GB').split('/').join('-');
+    
+    function parseDMY(dateStr) {
+        const [day, month, year] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    }
+
+    function checkDateDifference(dateStr1, dateStr2) {
+        const date1 = parseDMY(dateStr1);
+        const date2 = parseDMY(dateStr2);
+        return Math.abs(date2 - date1) / (1000 * 60 * 60 * 24 * 7);
+    }
+
+
     const target = document.querySelector(".flo > .description_clean");
 
     const container = GM_addElement(target, "div", {
@@ -1083,27 +1097,36 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
         style: "color: #222;"
     });
 
+    const errorBox = GM_addElement(container, "div", {
+        id: "weekly-error",
+        style: "color: red; margin-top: 10px; display: none;"
+    });
+
+
+    const domParser = new DOMParser();
 
     const stickies = Array.from(document.querySelectorAll('.stickies .threadinfo'))
     .filter(node => /אשכול השבוע|משקיען השבוע|7 ימי ווינר|משקיען ואשכול/.test(node.textContent))
     .map(node => node.parentElement);
-    
     if (stickies.length > 1 || stickies.length === 0) {
         // maybe in the future, this will handle values greater than 1
         container.style.display = "none";
         return;
     }
-    const domParser = new DOMParser();
+
     const element = stickies.shift().querySelector('a.lastpostdate');
     const url = element.href?.replace(/#post.*/, '');
     if (!url) {
-        const errorBox = GM_addElement(container, "div", {
-            id: "weekly-error",
-            style: "color: red; margin-top: 10px;"
-        });
-
-        errorBox.innerHTML = 'האשכול השבועי לא מכיל אף הכרזה, יש לפנות <a href="https://www.fxp.co.il/forumdisplay.php?f=18" target="_blank">צוות תמיכה</a>';
+        errorBox.style.display = "block";
+        errorBox.innerHTML = 'האשכול השבועי לא מכיל אף הכרזה, יש לפנות ל<a href="https://www.fxp.co.il/forumdisplay.php?f=18" target="_blank">צוות תמיכה</a>';
         return;
+    }
+    const time = element.parentElement.textContent;
+    const date = time.split(" ").shift().replace(/אתמול|היום/, getTodayDMY());
+    if (checkDateDifference(getTodayDMY(), date) >= 2) {
+        errorBox.style.display = "block";
+        errorBox.innerHTML = 'האשכול השבועי לא עודכן זמן רב, יש לפנות ל<a href="https://www.fxp.co.il/forumdisplay.php?f=18" target="_blank">צוות תמיכה</a>';
+        return
     }
     const response = await fetcher(url + "&pp=1");
     const doc = domParser.parseFromString(response, "text/html");
