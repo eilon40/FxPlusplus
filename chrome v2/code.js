@@ -1,68 +1,24 @@
+const checkbox = (label) => ({ label, default: false, type: 'checkbox' });
 const cfg = new MonkeyConfig({
     title: 'הגדרות FxPlus+',
     menuCommand: true,
     params: {
-        hideBigImages: {
-            label: "הסתר את הכתבות הגדולות מדך הבית",
-            type: 'checkbox',
-            default: false
-        },
-        hideGames: {
-            label: "הסתר את אזור המשחקים מדף הבית",
-            type: 'checkbox',
-            default: false
-
-        },
-        hideArticles: {
-            label: "הסתר כתבות מדף הבית",
-            type: 'checkbox',
-            default: false
-        },
-        resizeSignatures: {
-            label: "חותך חתימות גדולות",
-            type: 'checkbox',
-            default: false
-        },
-        hideAds: {
-            label: "הסתר מודעות",
-            type: 'checkbox',
-            default: false
-        },
-        hideNagish: {
-            label: "הסתר את תפריט הנגישות",
-            type: 'checkbox',
-            default: false
-        },
-        showFriends: {
-            label: "הצג חברים באשכולת",
-            type: 'checkbox',
-            default: false
-        },
-        showAutoPinned: {
-            label: "הצג יותר משלושה אשכולות נעוצים",
-            type: 'checkbox',
-            default: false
-        },
-        disableLiveTyping: {
-            label: "אל תודיע שאני מקליד",
-            type: 'checkbox',
-            default: false
-        },
-        showDeletedPost: {
-            label: "הצג פוסט שנמחק",
-            type: 'checkbox',
-            default: false
-        },
-        showLikeLimit: {
-            label: "הצג מגבלת לייקים",
-            type: 'checkbox',
-            default: false
-        },
-        connectedStaff: {
-            label: "הצג צוות מחובר",
-            type: 'checkbox',
-            default: false
-        },
+        hideBigImages: checkbox("הסתר את הכתבות הגדולות מדך הבית"),
+        hideGames: checkbox("הסתר את אזור המשחקים מדף הבית"),
+        hideArticles: checkbox("הסתר כתבות מדף הבית"),
+        resizeSignatures: checkbox("חותך חתימות גדולות"),
+        hideAds: checkbox("הסתר מודעות"),
+        hideNagish: checkbox("הסתר את תפריט הנגישות"),
+        showFriends: checkbox("הצג חברים באשכולת"),
+        showAutoPinned: checkbox("הצג יותר משלושה אשכולות נעוצים"),
+        disableLiveTyping: checkbox("אל תודיע שאני מקליד"),
+        showDeletedPost: checkbox("הצג פוסט שנמחק"),
+        showLikeLimit: checkbox("הצג מגבלת לייקים"),
+        connectedStaff: checkbox("הצג צוות מחובר"),
+        showCounts: checkbox('מציג את מספר הפוסטים ואת כמות המשתמשים המחוברים'),
+        pms: checkbox("מציג הודעות פרטיות שנמחקו"),
+        showForumStats: checkbox('הצג סטטיסטיקות פורומים'),
+        weeklyChallenge: checkbox('מציג אתגרים שבועיים בתוך הפורום'),
         audioChange: { // https://www.tzevaadom.co.il/static/sounds/calm.wav
             label: ":קישור לקובץ שמע עבור התראה",
             type: 'text',
@@ -79,31 +35,7 @@ const cfg = new MonkeyConfig({
             default: '',
             long: 3
         },
-        showCounts: {
-            label: 'מציג את מספר הפוסטים ואת כמות המשתמשים המחוברים',
-            type: 'checkbox',
-            default: false,
-        },
-        pms: {
-            label: "מציג הודעות פרטיות שנמחקו",
-            type: "checkbox",
-            default: false
-        },
-        showForumStats: {
-            label: 'הצג סטטיסטיקות פורומים',
-            type: "checkbox",
-            default: false
-        },
-        weeklyChallenge: {
-            label: 'מציג אתגרים שבועיים בתוך הפורום',
-            type: "checkbox",
-            default: false
-        },
-        nightMode: {
-            label: 'הפעל את מצב הלילה אוטומטית',
-            type: "checkbox",
-            default: false
-        },
+        nightMode: checkbox('הפעל את מצב הלילה אוטומטית'),
         startTime: {
             label: 'Start Time:',
             type: 'text',
