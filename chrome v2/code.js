@@ -107,7 +107,7 @@ const cfg = new MonkeyConfig({
         startTime: {
             label: 'Start Time:',
             type: 'text',
-            default: '7:00'
+            default: '17:00'
         },
         endTime: {
             label: 'End Time:',
@@ -138,7 +138,6 @@ TODO:
 - Like add http to check
 - disable/enable on the same page and prevent reload
 - Add features:
-  - Auto reader mode
   - BBCode support
   - Hide sticky posts
 */
@@ -155,6 +154,15 @@ function waitForObject(path) {
             }
         }, 100);
     });
+}
+
+function setCookie(name, value, minutes) {
+    const expires = new Date(Date.now() + minutes * 60 * 1000).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
+
+function getCookie(n) {
+    return decodeURIComponent(document.cookie.split('; ').find(c => c.startsWith(n + '='))?.split('=')[1] || '');
 }
 
 function onMatchIfLoggedIn(match, permissions, callback) {
@@ -277,41 +285,33 @@ onMatchIfLoggedIn("signature", "none", function() {
     const smilieBox = document.querySelector('form[action*="signature"] .editor_smiliebox');
     smilieBox.parentNode.insertBefore(creditAddon, smilieBox);
 });
-onMatchIfLoggedIn("*", "showFriends", async function() {
-    const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+onMatchIfLoggedIn("*", "showFriends", async function () {
     const storageKey = "refreshFriends";
-    const storedTime = GM_getValue(storageKey);
-    if (storedTime) {
-        const timeSinceLastRefresh = new Date().getTime() - new Date(storedTime).getTime();
-        if (timeSinceLastRefresh < REFRESH_INTERVAL) {
-            return console.log('Friends list is still fresh, skipping refresh.');
-        }
-    }
-    let allFriendIds = [], temp = []
-    let page = 1, match;
+    if (getCookie(storageKey)) return;
+
+    const allFriendIds = [];
     const regex = /<h4><a href="member\.php\?u=(\d+)"/g;
-    while (temp.size < 100) {
-        temp = [];
+    let page = 1;
+    
+    while (true) {
         const url = `https://www.fxp.co.il/profile.php?do=buddylist&pp=100&page=${page}`;
         const html = await fetcher(url);
 
-        while ((match = regex.exec(html)) !== null) temp.push(match[1]);
+        const matches = Array.from(html.matchAll(regex)).map(m => m[1]);
+        matches.forEach(id => allFriendIds.push(id));
 
-        allFriendIds = allFriendIds.concat(temp);
-        console.log(`Page ${page}: Total friend IDs collected so far: ${allFriendIds.size}`);
-        
-        if (!match) break;
+        if (matches.length < 100) break;
+
         page++;
     }
 
-    console.log('Fetched friend IDs:', allFriendIds);
-
     GM_setValue('friendIds', JSON.stringify(allFriendIds));
-    GM_setValue(storageKey, Date.now());
-})
+    setCookie(storageKey, Date.now(), 15);
+});
+
 onMatchIfLoggedIn("show(post|thread)", "showFriends", function() {
-    const friendIds = JSON.parse(GM_getValue("friendIds", '[]'));
-    if (!friendIds) return;
+    const friendIds = JSON.parse(GM_getValue("friendIds", '[0]'));
     const styleElement = GM_addStyle(`
         ${friendIds.map(id => '.username[href$="' + id + '"]::after').join(', ')} {
             content: "";
@@ -345,9 +345,9 @@ onMatchIfLoggedIn("show(post|thread)", "smiles", async function() {
     if (images.length < 1) return;
 
     const editor = await waitForObject("vB_Editor.vB_Editor_QR");
-    console.log("vB_Editor is available:", editor);
-    let temp = editor.config.smiley_descriptions,
-        tmp = editor.config.smiley_images;
+    let originalDescriptions = editor.config.smiley_descriptions,
+        originalImages = editor.config.smiley_images;
+
     for (const image of images) {
         if (!image) continue;
         editor.config.smiley_descriptions.push(`[img]${image}[/img]`);
@@ -355,8 +355,8 @@ onMatchIfLoggedIn("show(post|thread)", "smiles", async function() {
     }
 
     return () => {
-        editor.config.smiley_descriptions = temp;
-        editor.config.smiley_images = tmp;
+        editor.config.smiley_descriptions = originalDescriptions;
+        editor.config.smiley_images = originalImages;
     }
 })
 onMatchIfLoggedIn("show(post|thread)", "showLikeLimit", function() {
@@ -410,9 +410,7 @@ onMatchIfLoggedIn("do=showpm&pmid=", "pms", async function() {
 onMatch("show(post|thread)", "showDeletedPost", function() {
     const targetPostId = queryParams.get('p');
     const isPostExist = document.contains(document.getElementById('post_' + targetPostId));
-    if (!targetPostId || isPostExist) {
-        return;
-    }
+    if (!targetPostId || isPostExist) return;
     const elements = Array.from(document.querySelectorAll('.postbit'));
     const postIds = elements.map(el => parseInt(el.id.replace('post_', '')));
     const index = postIds.filter(pid => pid < targetPostId).length - 1;
@@ -464,7 +462,7 @@ onMatch("forumdisplay", "connectedStaff", function() {
 });
 onMatch("*", "showCounts", function() {
     const scripts = document.querySelectorAll('script[type="text/javascript"]:not([src])');
-    const script = Array.from(scripts).find(e => e.innerText.includes("counts"));
+    const script = Array.from(scripts).find(e => e.textContent.includes("counts"));
     if (!script) return;
 
     const lines = script.innerText.split("\n");
@@ -634,30 +632,17 @@ onMatch("forumdisplay", "showForumStats", function() {
 `)
 
     function getDupeSortedDictionary(arr) {
-        var counts = {}; //count each one
-        for (var i = 0; i < arr.length; i++) {
-            counts[arr[i]] = (counts[arr[i]] || 0) + 1;
-        }
+        const counts = new Map();
 
-        var sortedArr = []; //add all properties to an array
-        for (var prop in counts) {
-            sortedArr.push({
-                value: prop,
-                count: counts[prop]
-            });
-        }
-        sortedArr.sort(function(a, b) //sort the array according to the counts or alphabetically
-            {
-                if (b.count === a.count) {
-                    if (b.value < a.value)
-                        return 1;
-                    else if (b.value > a.value)
-                        return -1;
-                    else
-                        return 0;
-                } else
-                    return b.count - a.count;
-            });
+        for (const item of arr) counts.set(item, (counts.get(item) || 0) + 1);
+
+        const sortedArr = Array.from(counts, ([value, count]) => ({ value, count }));
+
+        sortedArr.sort((a, b) => {
+            return b.count === a.count ? 
+                a.value.localeCompare(b.value) : b.count - a.count
+        });
+
         return sortedArr;
     }
 
@@ -994,9 +979,7 @@ onMatch("forumdisplay", "showForumStats", function() {
 onMatch("*", "nightMode", function () {
     function toggleDarkMode(isEnabled) {
         const newValue = isEnabled ? "1" : "0";
-        const date = new Date();
-        date.setTime(Date.now() + 172800000);
-        document.cookie = `bb_darkmode=${newValue}; expires=${date.toUTCString()}`;
+        setCookie("bb_darkmode", newValue, 1440)
         console.log(`Night mode cookie set to: ${newValue}`);
     }
 
@@ -1004,10 +987,6 @@ onMatch("*", "nightMode", function () {
         if (!timeString) return 0;
         const [hours, minutes] = timeString.split(':').map(Number);
         return hours * 60 + minutes;
-    }
-
-    function isNightModeEnabled() {
-        return document.cookie.split(';').some(cookie => cookie.trim() === 'bb_darkmode=1');
     }
 
     const darkModeThemeEl = document.querySelector("#darkmode_theme");
@@ -1023,7 +1002,7 @@ onMatch("*", "nightMode", function () {
             ? (minutesCurrent >= minutesStart || minutesCurrent < minutesEnd)
             : (minutesCurrent >= minutesStart && minutesCurrent < minutesEnd);
 
-        const nightModeActive = isNightModeEnabled();
+        const nightModeActive = getCookie("bb_darkmode") == "1"
 
         if (nightModeActive && !rangeActive) {
             console.log('Disabling night mode...');
@@ -1066,7 +1045,6 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
         return Math.abs(date2 - date1) / (1000 * 60 * 60 * 24 * 7);
     }
 
-
     const target = document.querySelector(".flo > .description_clean");
 
     const container = GM_addElement(target, "div", {
@@ -1102,6 +1080,16 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
         style: "color: red; margin-top: 10px; display: none;"
     });
 
+    const CACHE_KEY = "weeklyChallengeCache" + rawWindow.FORUM_ID_FXP;
+    const cachedData = getCookie(CACHE_KEY);
+    if (cachedData) {
+        try {
+            const { thread, member } = JSON.parse(cachedData);
+            document.getElementById("thread-week").textContent = thread;
+            document.getElementById("member-week").textContent = member;
+            return;
+        } catch (e) {}
+    }
 
     const domParser = new DOMParser();
 
@@ -1114,7 +1102,8 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
         return;
     }
 
-    const element = stickies.shift().querySelector('a.lastpostdate');
+    const sticky = stickies.shift();
+    const element = sticky.querySelector('a.lastpostdate');
     const url = element.href?.replace(/#post.*/, '');
     if (!url) {
         errorBox.style.display = "block";
@@ -1126,7 +1115,7 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
     if (checkDateDifference(getTodayDMY(), date) >= 2) {
         errorBox.style.display = "block";
         errorBox.innerHTML = 'האשכול השבועי לא עודכן זמן רב, יש לפנות ל<a href="https://www.fxp.co.il/forumdisplay.php?f=18" target="_blank">צוות תמיכה</a>';
-        return
+        return;
     }
     const response = await fetcher(url + "&pp=1");
     const doc = domParser.parseFromString(response, "text/html");
@@ -1137,13 +1126,12 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
     TODO:
     - Handle multiple thread links properly current implementation only processes the first link and does not cover all cases.
     - Add a time check mechanism to update the data only if there are changes or after a certain interval.
-    - Add error handling for the fetch request and DOM parsing to avoid silent failures.
-    - Implement caching to store fetched data temporarily and reduce repeated requests.
     - Replace textContent below with real URL
     */
-    let thread = threads.length > 0 ? threads[0].textContent.trim() : "לא נמצא אשכול";
+    let thread = threads.length > 0 ? threads[0].textContent.trim().replace(/^"|"$/g, "") : "לא נמצא אשכול";
     let member = members.length > 0 ? members[0].textContent.trim() : "לא נמצא משתמש";
 
     document.getElementById("thread-week").textContent = thread;
     document.getElementById("member-week").textContent = member;
+    setCookie(CACHE_KEY, JSON.stringify({ thread, member }), 5);
 })
