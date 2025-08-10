@@ -25,7 +25,10 @@ const cfg = new MonkeyConfig({
         smiles: text(':רשימה של קישורים לסמיילים', '', { long: 3 }), // https://yoursmiles.org/tsmile/heart/t4524.gif
         nightMode: checkbox('הפעל את מצב הלילה אוטומטית'),
         startTime: text('Start Time:', '17:00'),
-        endTime: text("End Time:", '23:50')
+        endTime: text("End Time:", '23:50'),
+        color: text("צבע"),
+        font: text('פונט'),
+        size: text('גודל')
     }
 });
 
@@ -311,7 +314,7 @@ onMatch("show(post|thread)", "showDeletedPost", function() {
     const newElement = GM_addElement("li", {
         textContent: 'התגובה שאתה מנסה לראות נמחקה.',
         id: 'post_' + targetPostId,
-        className: 'postbit postbitim postcontainer', //test how this show (innerHTML)
+        class: 'postbit postbitim postcontainer', //test how this show (innerHTML)
         style: "background-color: #ffdddd; border: 1px solid #ff0000; padding: 10px 0; border-radius: 5px; color: #333; font-weight: bold; text-align: center;"
     })
     const targetElement = elements.at(index);
@@ -878,3 +881,30 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
     document.getElementById("member-week").textContent = member;
     setCookie(CACHE_KEY, JSON.stringify({ thread, member }), 5);
 })
+
+// TODO: check that every editor is compatible 
+// consider adding a check to validate the parameter
+// currently does not support setting changes
+// This code runs only once; executeCommand works better then
+onMatch("show(post|thread)|newreply", "none", async function() {    
+    const instances = await waitForObject("CKEDITOR.instances");
+    const editorIds = Object.keys(instances); // document
+    const editor = instances[editorIds[0]];
+    let content = editor.getData();
+
+    if (!content.trim()) {
+        content = '\u200B';
+    }
+
+    function setStyle(content, style) {
+        const value = cfg.get(style);
+        if (!value) return content;
+        console.log(style, value, `[${style}=${value}]${content}[/${style}]`);
+        return `[${style}=${value}]${content}[/${style}]`;
+    }
+
+    content = setStyle(content, 'size');
+    content = setStyle(content, 'font');
+    content = setStyle(content, 'color');
+    editor.setData(content);
+});
