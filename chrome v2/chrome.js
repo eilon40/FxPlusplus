@@ -18,10 +18,11 @@ function GM_addStyle(css) {
 		return GM_addElement("style", { textContent: css });
 	}
 }
-function GM_addElement(tag, attrs, container = document.body) {
+function GM_addElement(tag, attrs = {}, container = document.body) {
 	const el = document.createElement(tag);
 	Object.entries(attrs).forEach(([k, v]) => {
 		if (k === "textContent") el.textContent = v;
+		if (k === "class") el.className = v;
 		else el.setAttribute(k, v);
 	});
 	container.appendChild(el);

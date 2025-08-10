@@ -327,6 +327,8 @@ onMatch("show(post|thread)", "showDeletedPost", function() {
     return () => newElement?.remove();
 });
 onMatch("forumdisplay", "connectedStaff", function() {
+    const team = document.querySelector(".teammen.flo");
+    team.dir = "auto"
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '10px');
     svg.setAttribute('height', '10px');
@@ -351,6 +353,7 @@ onMatch("forumdisplay", "connectedStaff", function() {
     });
 
     return () => {
+        team.dir = "";
         usernameElements.forEach(({
             lastChild
         }) => lastChild.tagName === 'svg' && lastChild.remove());
@@ -394,343 +397,223 @@ onMatch("*", "showCounts", function() {
         container.addEventListener("transitionend", container.remove);
     }, 5000);
 });
-/*
-the old messy code with all those functions
-maybe one day I'll have AI rewrite it in cleaner vanilla JavaScript with fewer indentations.
-https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog
-9.8 - I added several functions to reduce the code size until a full refactor can be done.
-*/
+
+//TODO: still needs improvement, but much better than before
 onMatch("forumdisplay", "showForumStats", function() {
-    GM_addStyle(`
-    #forumStatsContainer {
-        width: 100%;
-        clear: both;
-        background: #feffe5;
-        border: 1px solid #C4C4C4;
-        border-top: none;
-        border-bottom-left-radius: 5px;
-        border-bottom-right-radius: 5px;
-        box-sizing: border-box;
-    }
-    #forumStats {
-        padding: 1em;
-        text-align: center;
-        position: relative;
-        padding-bottom: 1.5em;
-    }
-    .statTable {
-        border: 1px solid #f1f1f1;
-        margin: 0 0.5em;
-        margin-bottom: 1em;
-        border-top: 0;
-        border-bottom: 0;
-    }
-    .statTable th {
-        font-weight: bold;
-        text-align: center;
-        padding: 0.5em;
-    }
-    .statTable td {
-        padding: 0.1em 0.5em;
-    }
-    #detailedStatsBtn {
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        border-bottom: none !important;
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        transform: translateX(-50%);
-    }
-    .dimScreen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.75);
-        z-index: 111;
-        display: none;
-    }
-    #popupBox {
-        z-index: 1200;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        pointer-events: none;
-    }
-    .popupContainer {
-        pointer-events: all;
-        animation: fadeInTop 0.3s;
-        display: none;
-    }
-    .popupContainer.greenTopPopup .popupTop {
-        background: #1d9655;
-    }
-
-    .popupContainer.orangeTopPopup .popupTop {
-        background: #ea861c;
-    }
-
-    .popupContainer.alertTopPopup .popupTop {
-        background: #ef1700;
-    }
-    .popupTop {
-        background: #1CA4EA;
-        color: #fff;
-        font-size: 1.4em;
-        border-top-left-radius: 0.2em;
-        border-top-right-radius: 0.2em;
-        padding: 0.5em 2em;
-        text-align: center;
-    }
-        .popupTop .subtitle {
-            font-size: 0.5em;
-            color: rgba(255, 255, 255, 0.64);
-        }
-    .popupImg {
-        width: 3em;
-        height: 3em;
-        background: inherit;
-        padding: 0.2em;
-        border-radius: 50%;
-        margin: 0 auto;
-        margin-top: -1.8em;
-    }
-    .popupBottom {
-        background: #fff;
-        border-bottom-left-radius: 0.2em;
-        border-bottom-right-radius: 0.2em;
-        padding: 1em 2em;
-        text-align: center;
-        max-height: calc(80vh - 3em);
-        max-width: 90vw;
-        box-sizing: border-box;
-        overflow: auto;
-    }`)
-
     function getDupeSortedDictionary(arr) {
         const counts = new Map();
 
         for (const item of arr) counts.set(item, (counts.get(item) || 0) + 1);
 
         const sortedArr = Array.from(counts, ([value, count]) => ({ value, count }));
-
         sortedArr.sort((a, b) => {
             return b.count === a.count ? 
-                a.value.localeCompare(b.value) : b.count - a.count
+                a.value.localeCompare(b.value) : b.count - a.count;
         });
 
         return sortedArr;
     }
 
-    function openPopupWindow(id, img, title, content, additionalClass) {
-        if ($("#popupBox").length === 0) {
-            $("body").append($("<div>", {
-                id: "popupBox"
-            }));
-        }
+    function openPopupWindow(id, title, content) {
+        let dialog = document.getElementById(id);
+        if (!dialog) {
+            dialog = document.createElement("dialog");
+            dialog.id = id;
 
-        //do not open a popup if one already exists
-        if ($(".popupContainer").length === 0) {
-            $("body").append($("<div>", {
-                class: "dimScreen",
-                id: "dim_" + id
-            }).click(function() {
-                removePopupWindow(id);
-            }));
+            // Popup structure
+            const popupTop = document.createElement("div");
+            popupTop.className = "popupTop";
 
-            var popup =
-                $("<div>", {
-                    class: "popupContainer",
-                    id: id
-                }).append(
-                    $("<div>", {
-                        class: "popupTop"
-                    }).append(
-                        $("<div>", {
-                            class: "popupImg"
-                        }).append(
-                            $("<img>", {
-                                src: img
-                            })
-                        )
-                    ).append(
-                        $("<div>", {
-                            class: "popupTitle"
-                        }).append(title)
-                    )
-                ).append(
-                    $("<div>", {
-                        class: "popupBottom"
-                    }).append(content)
-                );
+            const popupTitle = document.createElement("div");
+            popupTitle.className = "popupTitle";
+            popupTitle.textContent = title;
 
-            if (additionalClass)
-                popup.addClass(additionalClass);
+            popupTop.appendChild(popupTitle);
 
-            $("#popupBox").append(popup);
+            const popupBottom = document.createElement("div");
+            popupBottom.className = "popupBottom";
 
-            $("#dim_" + id).fadeIn(300, function() {
-                $("#" + id).show();
+            if (typeof content === "string") {
+                popupBottom.textContent = content;
+            } else {
+                popupBottom.appendChild(content);
+            }
+
+            dialog.appendChild(popupTop);
+            dialog.appendChild(popupBottom);
+
+            // Append dialog to body
+            document.body.appendChild(dialog);
+
+            dialog.addEventListener("click", (e) => {
+                if (e.target === dialog) dialog.close();
             });
         }
+
+        dialog.showModal();
     }
 
     function removePopupWindow(id) {
-        if ($("#" + id).length > 0) {
-            $("#" + id).remove();
-            $("#dim_" + id).fadeOut(300, function() {
-                $(this).remove();
-            });
+        const dialog = document.getElementById(id);
+        if (dialog && dialog.open) {
+            dialog.close();
         }
     }
+
     const total = document.querySelectorAll('#threads .threadtitle').length;
-    $(".threads_list_fxp").after(
-        $("<div>", {
-            id: "forumStatsContainer"
-        }).append(
-            $("<div>", {
-                id: "forumStats"
-            }).append(
-                $("<i>").text(`נתונים סטטיסטיים של ${total} אשכולות:`)
-            )
-        )
-    );
 
-    const toArray = (selector) => Array.from(document.querySelectorAll(selector)).map(el => el.textContent)
-    function appendLine(dict, introText, noText, suffixText) {
-        const line = $("<div>");
+    const container = document.createElement("div");
+    container.id = "forumStatsContainer";
+    const threadsList = document.querySelector(".threads_list_fxp");
+    threadsList.parentNode.insertBefore(container, threadsList.nextSibling);
+
+    const forumStats = document.createElement("div");
+    forumStats.id = "forumStats";
+    const italic = document.createElement("i");
+    italic.textContent = `נתונים סטטיסטיים של ${total} אשכולות:`;
+    forumStats.appendChild(italic);
+    container.appendChild(forumStats);
+
+    const toArray = selector => Array.from(document.querySelectorAll(selector)).map(el => el.textContent);
+
+    function appendLine(dict, introText, noText, suffix) {
+        const line = document.createElement("div");
         if (dict.length > 1 && dict[0].count > 1) {
-            line.append($("<span>").text(introText));
+            line.append(introText);
             for (let i = 0; i < dict.length && dict[i].count === dict[0].count; i++) {
-                if (i > 0) line.append($("<span>").text(" או "));
-                line.append($("<b>").text(dict[i].value));
+                if (i > 0) line.append(" או ");
+                const b = document.createElement("b");
+                b.textContent = dict[i].value;
+                line.appendChild(b);
             }
-            line.append($("<span>").text(" עם " + dict[0].count + suffixText));
+            line.append(" עם " + dict[0].count + suffix);
         } else {
-            line.append($("<span>").text(noText));
+            line.append(noText);
         }
-        $("#forumStats").append(line);
+        forumStats.appendChild(line);
     }
 
-    var publishersDict = getDupeSortedDictionary(toArray("#threads .threadinfo .username"));
-    var commentorsDict = getDupeSortedDictionary(toArray("#threads .threadlastpost .username"));    
-    var words = []; //array of all words in titles
-    $("#threads .title").each(function() {
-        var titleWords = $(this).text().match(/([^\s.,\/#?!$%\^&\*+;:{}|=\-_`~()]+)/g); //get words in title
-        if (titleWords !== null) {
-            titleWords.forEach(function(word) {
-                if (word.length > 1) words.push(word);
-            });
-        }
-    });
-    var wordsDict = getDupeSortedDictionary(words);
-    var prefixesDict = getDupeSortedDictionary(toArray("#threads .prefix").map(prefix => prefix.replace(/\||סקר: /g, '')));
+    const publishersDict = getDupeSortedDictionary(toArray("#threads .threadinfo .username"));
+    const commentorsDict = getDupeSortedDictionary(toArray("#threads .threadlastpost .username"));
+    const prefixesDict = getDupeSortedDictionary(toArray("#threads .prefix").map(prefix => prefix.replace(/\||סקר: /g, '')));
 
     appendLine(
         publishersDict,
         "המפרסם הדומיננטי ביותר הוא ",
         "אין מפרסם דומיננטי במיוחד.",
-        " אשכולות.",
+        " אשכולות."
     );
-
     appendLine(
         commentorsDict,
         "המגיב האחרון הדומיננטי ביותר הוא ",
         "אין מגיב אחרון דומיננטי במיוחד.",
-        " תגובות אחרונות.",
+        " תגובות אחרונות."
     );
-    appendLine(
-        wordsDict,
-        "המילה הנפוצה ביותר בכותרות היא ",
-        "אין מילה נפוצה במיוחד בכותרות.",
-        " אזכורים.",
-    );
-    //TODO:  שנמצא ב-" + prefixesDict[0].count + " אשכולות.
-    appendLine(
+    appendLine( //TODO:  שנמצא ב-" + prefixesDict[0].count + " אשכולות.
         prefixesDict,
         "התיוג הנפוץ ביותר הוא ",
         "אין תיוג נפוץ במיוחד.",
-        " אשכולות.",
+        " אשכולות."
     );
-    //VIEW COMMENT RATIO
-    var commentsCount = 0;
-    var viewsCount = 0;
 
-    var cc, vc;
+    const parseNumber = text => parseInt(text.replace(/[^\d]/g, ""), 10) || 0;
 
-    $("#threads .threadstats").each(function() {
-        cc = parseInt($(this).find("li:eq(0)").text().replace(",", "").replace(/^\D+/g, ""));
-        vc = parseInt($(this).find("li:eq(1)").text().replace(",", "").replace(/^\D+/g, ""));
-        if (!isNaN(cc)) commentsCount += cc;
-        if (!isNaN(vc)) viewsCount += vc;
+    let commentsCount = 0;
+    let viewsCount = 0;
+
+    document.querySelectorAll("#threads .threadstats").forEach(el => {
+        const [commentsLi, viewsLi] = el.querySelectorAll("li");
+        commentsCount += parseNumber(commentsLi.textContent);
+        viewsCount += parseNumber(viewsLi.textContent);
     });
 
-    var viewsCommentsRatio = Math.round(viewsCount / commentsCount);
-    if (viewsCommentsRatio < 1) viewsCommentsRatio = 1; //make sure that it's not rounded to 0
+    let viewsCommentsRatio = commentsCount > 0 ? Math.max(1, Math.round(viewsCount / commentsCount)) : "∞";
 
-    if (isNaN(viewsCommentsRatio)) viewsCommentsRatio = "∞";
+    const ratioLine = document.createElement("div");
+    const span1 = document.createElement("span");
+    span1.textContent = "יחס הצפיות לתגובה הוא תגובה כל ";
+    const bRatio = document.createElement("b");
+    bRatio.textContent = viewsCommentsRatio + " צפיות";
+    const span2 = document.createElement("span");
+    span2.textContent = ".";
+    ratioLine.appendChild(span1);
+    ratioLine.appendChild(bRatio);
+    ratioLine.appendChild(span2);
 
-    line = $("<div>");
-    line.append($("<span>").text("יחס הצפיות לתגובה הוא תגובה כל "));
-    line.append($("<b>").text(viewsCommentsRatio + " צפיות"));
-    line.append($("<span>").text("."));
-    $("#forumStats").append(line);
+    forumStats.appendChild(ratioLine);
 
-    wordsDict = wordsDict.filter(word => word.count > 1);
+    const detailedStatsBtn = document.createElement("div");
+    detailedStatsBtn.className = "smallPlusButton";
+    detailedStatsBtn.id = "detailedStatsBtn";
+    detailedStatsBtn.textContent = "+";
 
-    $("#forumStats").append(
-        $("<div>", {
-            class: "smallPlusButton",
-            id: "detailedStatsBtn"
-        }).text("+").click(function() {
+    detailedStatsBtn.addEventListener("click", () => {
+        const pContent = document.createElement("div");
 
-            var pContent = $("<div>");
+        const titleDiv = document.createElement("div");
+        titleDiv.textContent = "להלן פירוט הסטטיסטיקות לפורום זה:";
+        pContent.appendChild(titleDiv);
 
-            pContent.append($("<div>").text("להלן פירוט הסטטיסטיקות לפורום זה:"));
+        const flexTableContainer = document.createElement("div");
+        flexTableContainer.style.display = "flex";
+        flexTableContainer.style.flexWrap = "wrap";
 
-            var flexTableContainer = $("<div>", {
-                style: "display: flex; flex-wrap: wrap;"
+        function helper(headerA, headerB, arr) {
+            const table = document.createElement("table");
+            table.className = "statTable";
+
+            const headerRow = document.createElement("tr");
+            const th1 = document.createElement("th");
+            th1.textContent = headerA;
+            const th2 = document.createElement("th");
+            th2.textContent = headerB;
+
+            headerRow.appendChild(th1);
+            headerRow.appendChild(th2);
+            table.appendChild(headerRow);
+
+            arr.forEach(item => {
+                const tr = document.createElement("tr");
+                const tdValue = document.createElement("td");
+                tdValue.textContent = item.value;
+                const tdCount = document.createElement("td");
+                tdCount.textContent = item.count;
+
+                tr.appendChild(tdValue);
+                tr.appendChild(tdCount);
+                table.appendChild(tr);
             });
-            function helper(headerA, headerB, arr) {
-                const $table = $("<table>", { class: "statTable" });
-                const $headerRow = $("<tr>")
-                    .append($("<th>").text(headerA))
-                    .append($("<th>").text(headerB));
-                
-                $table.append($headerRow);
 
-                arr.forEach(item => {
-                    $table.append(
-                        $("<tr>")
-                            .append($("<td>").text(item.value))
-                            .append($("<td>").text(item.count))
-                    );
-                });
+            flexTableContainer.appendChild(table);
+        }
 
-                flexTableContainer.append($table);
-            }
+        helper("מפרסם", "אשכולות", publishersDict);
+        helper("מגיב", "תגובות אחרונות", commentorsDict);
+        helper("תיוג", "אשכולות", prefixesDict);
 
-            helper("מפרסם", "אשכולות", publishersDict)
-            helper("מגיב", "תגובות אחרונות", commentorsDict)
-            helper("מילה", "אזכורים", wordsDict)
-            helper("תיוג", "אשכולות", prefixesDict)
+        pContent.appendChild(flexTableContainer);
 
-            pContent.append(flexTableContainer);
-            pContent.append($("<div>", { class: "closeBtn" }).text("סגור").click(function() { removePopupWindow("detailedStats"); }));
-            openPopupWindow("detailedStats",
-                "https://raw.githubusercontent.com/SilverTuxedo/FxPlusplus/refs/heads/master/chrome/images/graph.svg",
-                "סטטיסטיקות מפורטות לפורום " + document.querySelector("[property=\"og:title\"]").content.replace("קהילת", "").trim(),
-                pContent);
-        }));
-    return () => document.querySelectorAll("#forumStatsContainer, #popupBox").forEach(e => e.remove())
-})
+        const closeBtn = document.createElement("div");
+        closeBtn.className = "closeBtn";
+        closeBtn.textContent = "סגור";
+        closeBtn.addEventListener("click", () => removePopupWindow("detailedStats"));
+        pContent.appendChild(closeBtn);
+
+        const forumTitle = document.querySelector("[property=\"og:title\"]")?.content.replace("קהילת", "").trim() || "";
+        openPopupWindow(
+            "detailedStats",
+            "סטטיסטיקות מפורטות לפורום " + forumTitle,
+            pContent
+        );
+    });
+
+    forumStats.appendChild(detailedStatsBtn);
+
+    return () => {
+        document.querySelectorAll("#forumStatsContainer, dialog").forEach(e => e.remove());
+    };
+});
+
 onMatch("*", "nightMode", function () {
     const toggleDarkMode = (isEnabled) => setCookie("bb_darkmode",  isEnabled ? "1" : "0", 1440);
 
@@ -777,7 +660,6 @@ onMatch("*", "nightMode", function () {
     const interval = setInterval(exec, 20 * 1000);
 
     return () => clearInterval(interval);
-
 });
 onMatch("forumdisplay", "weeklyChallenge", async function() {
     const getTodayDMY = () => new Date().toLocaleDateString('en-GB').split('/').join('-');
@@ -790,7 +672,7 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
     function checkDateDifference(dateStr1, dateStr2) {
         const date1 = parseDMY(dateStr1);
         const date2 = parseDMY(dateStr2);
-        return Math.abs(date2 - date1) / (1000 * 60 * 60 * 24 * 7);
+        return Math.abs(date2 - date1) / 604800000; // 604800000 = week
     }
 
     const target = document.querySelector(".flo > .description_clean");
@@ -809,10 +691,7 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
         textContent: "טוען...",
         style: "margin-bottom: 12px; color: #222;"
     });
-    // GM_addElement(container, "img", {
-    //     src: "https://i.imagesup.co/images2/84dc2f601852f01ca8bba4bd395a4d5756784812.png",
-    //     width:"150px"
-    // })
+
     GM_addElement(container, "h3", {
         textContent: "משתמש השבוע"
     });
@@ -895,16 +774,12 @@ onMatch("show(post|thread)|newreply", "none", async function() {
     if (!content.trim()) {
         content = '\u200B';
     }
-
-    function setStyle(content, style) {
+    
+    ['size', 'font', 'color'].forEach(style => {
         const value = cfg.get(style);
-        if (!value) return content;
-        console.log(style, value, `[${style}=${value}]${content}[/${style}]`);
-        return `[${style}=${value}]${content}[/${style}]`;
-    }
+        if (!value) return;
+        content = `[${style}=${value}]${content}[/${style}]`;
+    })
 
-    content = setStyle(content, 'size');
-    content = setStyle(content, 'font');
-    content = setStyle(content, 'color');
     editor.setData(content);
 });
