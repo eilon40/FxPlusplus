@@ -174,18 +174,16 @@ onMatchIfLoggedIn("signature", "none", function() {
         element.addEventListener('click', (event) => {
             const imgElement = event.target.parentElement.querySelector('img');
             const iframeBody = document.querySelector(".cke_contents iframe").contentDocument.body;
-            const creditLink = document.createElement('a');
-            creditLink.href = publishedThreadUrl;
-            creditLink.target = '_blank';
+            
+            const creditLink = GM_addElement(iframeBody, 'a', {
+                href: publishedThreadUrl, target: '_blank'
+            });
 
             if (imgElement) {
-                const img = document.createElement('img');
-                img.src = imgElement.src;
-                creditLink.appendChild(img);
+                GM_addElement(creditLink, "img", { src: imgElement.src });
             } else {
                 creditLink.textContent = '+FxPlus';
             }
-            iframeBody.appendChild(creditLink);
         });
     });
     const smilieBox = document.querySelector('form[action*="signature"] .editor_smiliebox');
@@ -371,7 +369,7 @@ onMatch("*", "showCounts", function() {
         if (match) counts[match[1]] = parseInt(match[2]);
     }
 
-    const container = document.createElement("div");
+    const container = GM_addElement("div");
     container.style.position = "fixed";
     container.style.bottom = "10px";
     container.style.right = "10px";
@@ -391,7 +389,6 @@ onMatch("*", "showCounts", function() {
         פוסטים: ${counts["#total_posts"]?.toLocaleString() ?? 'N/A'}
     `;
 
-    document.body.appendChild(container);
     setTimeout(() => {
         container.style.opacity = "0";
         container.addEventListener("transitionend", container.remove);
@@ -414,37 +411,13 @@ onMatch("forumdisplay", "showForumStats", function() {
         return sortedArr;
     }
 
-    function openPopupWindow(id, title, content) {
-        let dialog = document.getElementById(id);
+    function openPopupWindow(title, content) {
+        let dialog = document.getElementById("detailedStats");
         if (!dialog) {
-            dialog = document.createElement("dialog");
-            dialog.id = id;
-
-            // Popup structure
-            const popupTop = document.createElement("div");
-            popupTop.className = "popupTop";
-
-            const popupTitle = document.createElement("div");
-            popupTitle.className = "popupTitle";
-            popupTitle.textContent = title;
-
-            popupTop.appendChild(popupTitle);
-
-            const popupBottom = document.createElement("div");
-            popupBottom.className = "popupBottom";
-
-            if (typeof content === "string") {
-                popupBottom.textContent = content;
-            } else {
-                popupBottom.appendChild(content);
-            }
-
-            dialog.appendChild(popupTop);
-            dialog.appendChild(popupBottom);
-
-            // Append dialog to body
-            document.body.appendChild(dialog);
-
+            dialog = GM_addElement("dialog", {
+                id: "detailedStats"
+            })
+            dialog.innerHTML = `${title}${content}`
             dialog.addEventListener("click", (e) => {
                 if (e.target === dialog) dialog.close();
             });
@@ -467,30 +440,24 @@ onMatch("forumdisplay", "showForumStats", function() {
     const threadsList = document.querySelector(".threads_list_fxp");
     threadsList.parentNode.insertBefore(container, threadsList.nextSibling);
 
-    const forumStats = document.createElement("div");
-    forumStats.id = "forumStats";
-    const italic = document.createElement("i");
-    italic.textContent = `נתונים סטטיסטיים של ${total} אשכולות:`;
-    forumStats.appendChild(italic);
-    container.appendChild(forumStats);
-
+    const forumStats = GM_addElement(container, "div");
+    GM_addElement(forumStats, "i", { textContent: `נתונים סטטיסטיים של ${total} אשכולות:` });
     const toArray = selector => Array.from(document.querySelectorAll(selector)).map(el => el.textContent);
 
     function appendLine(dict, introText, noText, suffix) {
-        const line = document.createElement("div");
+        const line = GM_addElement(forumStats, "div");
         if (dict.length > 1 && dict[0].count > 1) {
             line.append(introText);
             for (let i = 0; i < dict.length && dict[i].count === dict[0].count; i++) {
                 if (i > 0) line.append(" או ");
-                const b = document.createElement("b");
-                b.textContent = dict[i].value;
-                line.appendChild(b);
+                GM_addElement(line, "b", {
+                    textContent: dict[i].value
+                });
             }
             line.append(" עם " + dict[0].count + suffix);
         } else {
             line.append(noText);
         }
-        forumStats.appendChild(line);
     }
 
     const publishersDict = getDupeSortedDictionary(toArray("#threads .threadinfo .username"));
@@ -522,92 +489,54 @@ onMatch("forumdisplay", "showForumStats", function() {
     let viewsCount = 0;
 
     document.querySelectorAll("#threads .threadstats").forEach(el => {
-        const [commentsLi, viewsLi] = el.querySelectorAll("li");
-        commentsCount += parseNumber(commentsLi.textContent);
-        viewsCount += parseNumber(viewsLi.textContent);
+        const [comments, views] = el.querySelectorAll("li");
+        commentsCount += parseNumber(comments.textContent);
+        viewsCount += parseNumber(views.textContent);
     });
 
     let viewsCommentsRatio = commentsCount > 0 ? Math.max(1, Math.round(viewsCount / commentsCount)) : "∞";
 
     const ratioLine = document.createElement("div");
-    const span1 = document.createElement("span");
-    span1.textContent = "יחס הצפיות לתגובה הוא תגובה כל ";
-    const bRatio = document.createElement("b");
-    bRatio.textContent = viewsCommentsRatio + " צפיות";
-    const span2 = document.createElement("span");
-    span2.textContent = ".";
-    ratioLine.appendChild(span1);
-    ratioLine.appendChild(bRatio);
-    ratioLine.appendChild(span2);
-
+    const b = document.createElement("b");
+    b.textContent = viewsCommentsRatio + " צפיות";
+    ratioLine.append("יחס הצפיות לתגובה הוא תגובה כל ", b, ".");
     forumStats.appendChild(ratioLine);
 
-    const detailedStatsBtn = document.createElement("div");
-    detailedStatsBtn.className = "smallPlusButton";
-    detailedStatsBtn.id = "detailedStatsBtn";
-    detailedStatsBtn.textContent = "+";
-
+    const detailedStatsBtn = GM_addElement(forumStats, "div", { textContent: "+" });
     detailedStatsBtn.addEventListener("click", () => {
         const pContent = document.createElement("div");
 
-        const titleDiv = document.createElement("div");
-        titleDiv.textContent = "להלן פירוט הסטטיסטיקות לפורום זה:";
-        pContent.appendChild(titleDiv);
-
-        const flexTableContainer = document.createElement("div");
-        flexTableContainer.style.display = "flex";
-        flexTableContainer.style.flexWrap = "wrap";
+        const flexTableContainer = GM_addElement(pContent, "div", {
+            style: "display: flex; flexWrap: wrap;"
+        });
 
         function helper(headerA, headerB, arr) {
-            const table = document.createElement("table");
-            table.className = "statTable";
-
-            const headerRow = document.createElement("tr");
-            const th1 = document.createElement("th");
-            th1.textContent = headerA;
-            const th2 = document.createElement("th");
-            th2.textContent = headerB;
-
-            headerRow.appendChild(th1);
-            headerRow.appendChild(th2);
-            table.appendChild(headerRow);
+            const table = GM_addElement(flexTableContainer, "table");
+            const headerRow = GM_addElement(table, "tr")
+            
+            GM_addElement(headerRow, "th", { textContent: headerA });
+            GM_addElement(headerRow, "th", { textContent: headerB });
 
             arr.forEach(item => {
-                const tr = document.createElement("tr");
-                const tdValue = document.createElement("td");
-                tdValue.textContent = item.value;
-                const tdCount = document.createElement("td");
-                tdCount.textContent = item.count;
-
-                tr.appendChild(tdValue);
-                tr.appendChild(tdCount);
-                table.appendChild(tr);
+                const tr = GM_addElement(table, "tr");
+                GM_addElement(tr, "td", { textContent: item.value });
+                GM_addElement(tr, "td", { textContent: item.count });
             });
-
-            flexTableContainer.appendChild(table);
         }
 
         helper("מפרסם", "אשכולות", publishersDict);
         helper("מגיב", "תגובות אחרונות", commentorsDict);
         helper("תיוג", "אשכולות", prefixesDict);
 
-        pContent.appendChild(flexTableContainer);
-
-        const closeBtn = document.createElement("div");
-        closeBtn.className = "closeBtn";
-        closeBtn.textContent = "סגור";
+        const closeBtn = GM_addElement(pContent, "div", { textContent: "סגור" });
         closeBtn.addEventListener("click", () => removePopupWindow("detailedStats"));
-        pContent.appendChild(closeBtn);
 
-        const forumTitle = document.querySelector("[property=\"og:title\"]")?.content.replace("קהילת", "").trim() || "";
+        const forumTitle = document.querySelector('.lastnavbit > span').textContent;
         openPopupWindow(
-            "detailedStats",
             "סטטיסטיקות מפורטות לפורום " + forumTitle,
-            pContent
+            pContent.outerHTML
         );
     });
-
-    forumStats.appendChild(detailedStatsBtn);
 
     return () => {
         document.querySelectorAll("#forumStatsContainer, dialog").forEach(e => e.remove());
