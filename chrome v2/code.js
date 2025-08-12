@@ -179,11 +179,8 @@ onMatchIfLoggedIn("signature", "none", function() {
                 href: publishedThreadUrl, target: '_blank'
             });
 
-            if (imgElement) {
-                GM_addElement(creditLink, "img", { src: imgElement.src });
-            } else {
-                creditLink.textContent = '+FxPlus';
-            }
+            if (!imgElement) creditLink.textContent = '+FxPlus';
+            else GM_addElement(creditLink, "img", { src: imgElement.src });
         });
     });
     const smilieBox = document.querySelector('form[action*="signature"] .editor_smiliebox');
@@ -282,7 +279,7 @@ onMatchIfLoggedIn("show(post|thread)", "showLikeLimit", async function() {
 
         const onclickAttr = element.getAttribute('onclick');
         if (onclickAttr != 'makelike(this.id);') return;
-
+    
         const postid = element.id.split('_').shift();
         if (await checkLike(postid)) return; //may cause issues (time)
 
@@ -369,20 +366,22 @@ onMatch("*", "showCounts", function() {
         if (match) counts[match[1]] = parseInt(match[2]);
     }
 
-    const container = GM_addElement("div");
-    container.style.position = "fixed";
-    container.style.bottom = "10px";
-    container.style.right = "10px";
-    container.style.background = "white";
-    container.style.border = "1px solid #ccc";
-    container.style.padding = "10px 15px";
-    container.style.boxShadow = "0 0 5px rgba(0,0,0,0.2)";
-    container.style.borderRadius = "8px";
-    container.style.zIndex = "9999";
-    container.style.fontFamily = "Arial, sans-serif";
-    container.style.fontSize = "14px";
-    container.style.transition = "opacity 1s";
-
+    const container = GM_addElement("div", {
+        style: `
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: white;
+            color: white;
+            border: 1px solid #ccc;
+            padding: 10px 15px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            transition: opacity 1s`
+    });
     container.innerHTML = `
         <strong>סטטיסטיקה:</strong><br>
         מחוברים: ${counts["#total_online"]?.toLocaleString() ?? 'N/A'}<br>
@@ -438,7 +437,7 @@ onMatch("forumdisplay", "showForumStats", function() {
     const container = document.createElement("div");
     container.id = "forumStatsContainer";
     const threadsList = document.querySelector(".threads_list_fxp");
-    threadsList.parentNode.insertBefore(container, threadsList.nextSibling);
+    threadsList?.parentNode?.insertBefore(container, threadsList.nextSibling);
 
     const forumStats = GM_addElement(container, "div");
     GM_addElement(forumStats, "i", { textContent: `נתונים סטטיסטיים של ${total} אשכולות:` });
@@ -696,9 +695,8 @@ onMatch("forumdisplay", "weeklyChallenge", async function() {
 // This code runs only once; executeCommand works better then
 onMatch("show(post|thread)|newreply", "none", async function() {    
     const instances = await waitForObject("CKEDITOR.instances");
-    const editorIds = Object.keys(instances); // document
-    const editor = instances[editorIds[0]];
-    let content = editor.getData();
+    const editor = Object.values(instances)[0];
+    let content = editor.getData(); // document
 
     if (!content.trim()) {
         content = '\u200B';
