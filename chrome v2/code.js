@@ -28,7 +28,13 @@ const cfg = new MonkeyConfig({
         endTime: text("End Time:", '23:50'),
         color: text("צבע"),
         font: text('פונט'),
-        size: text('גודל')
+        size: text('גודל'),
+        // This is a temporary solution until I find a better library.
+        // TODO: md5 the pass
+        user1name: text("שם"),
+        user1pass: text("סיסמה"),
+        user2name: text("שם"),
+        user2pass: text("סיסמה"),
     }
 });
 
@@ -711,22 +717,44 @@ onMatch("show(post|thread)|newreply", "none", async function() {
     editor.setData(content);
 });
 
+//temporally
+onMatch("upload.php", 'none', function() {
+    const user1 = [cfg.get("user1name"), cfg.get("user1pass")]
+    if (user1.filter(Boolean).length) {
+        const b = GM_addElement(document.querySelector(".back_image"), "button", {
+            textContent: "התחבר ל-" + user1[0]
+        })
+        b.addEventListener("click", async function() {
+            await logIntoUser({ user: user1[0], passmd5: user1[1] })
+        })
+    }
+    const user2 = [cfg.get("user2name"), cfg.get("user2spass")]
+    if (user2.filter(Boolean).length) {
+        const b = GM_addElement(document.querySelector(".back_image"), "button", {
+            textContent: "התחבר ל-" + user2[0]
+        })
+        b.addEventListener("click", async function() {
+            await logIntoUser({ user: user2[0], passmd5: user2[1] })
+        })
+    }
+
+})
 // TODO: refactor this function to use a Promise
 async function logIntoUser(user) {
-    const savedUserData = GM_getValue("savedUserData", []);
-    const userData = savedUserData.find(entry => entry.user === user);
+    // const savedUserData = GM_getValue("savedUserData", []);
+    // const userData = savedUserData.find(entry => entry.user === user);
 
-    if (!userData || !userData.passmd5) {
-        console.warn(`User "${user}" not found or missing password hash.`);
-        return;
-    }
+    // if (!userData || !userData.passmd5) {
+    //     console.warn(`User "${user}" not found or missing password hash.`);
+    //     return;
+    // }
 
-    const success = await logout();
-    if (!success) {
-        return console.error("Logout failed. Aborting login.");
-    }
+    // const success = await logout();
+    // if (!success) {
+    //     return console.error("Logout failed. Aborting login.");
+    // }
 
-    const status = await login(user, userData.passmd5);
+    const status = await login(user.user, user.passmd5);
     switch (status) {
         case 1:
             console.log("✅ Logged in successfully");
@@ -774,16 +802,20 @@ async function logout() {
 }
 
 async function login(username, passmd5) {
+    const bodyData = new URLSearchParams({
+        vb_login_username: username,
+        vb_login_password: passmd5,
+        securitytoken: "guest",
+        do: "login",
+        cookieuser: 1
+    });
+
     const postData = {
         method: "POST",
-        body: {
-            vb_login_username: username,
-            vb_login_md5password: passmd5,
-            vb_login_md5password_utf: passmd5,
-            securitytoken: "guest",
-            do: "login",
-            cookieuser: 1
-        }
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        },
+        body: bodyData.toString()
     };
 
     try {
