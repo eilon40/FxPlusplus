@@ -1,4 +1,4 @@
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender) => {
 	if (!sender.tab || !sender.tab.id) return;
 
 	const tabId = sender.tab.id;
@@ -26,24 +26,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		});
 	}
 
-	if (message.action === "getStorage") {
-        chrome.storage.local.get(null)
-		.then(sendResponse)
-		.catch(error => {
-			console.error("Error getting all settings:", error);
-			sendResponse({ error: error.message });
-		});
-    }
-
-    if (message.action === "setSettings" && message.key) {
-        chrome.storage.local.set({ [message.key]: message.value })
-		.then(() => sendResponse({ success: true }))
-		.catch(error => {
-			console.error("Error saving settings:", error);
-			sendResponse({ error: error.message });
-		});
-    }
-
 	return true;
 });
 
@@ -56,15 +38,4 @@ chrome.omnibox.onInputEntered.addListener(async function (text) {
     });
 
 	chrome.tabs.update(tab.id, { url: newURL });
-});    
-
-
-// function onPermissionChange(permissionName, callback) {
-// 	chrome.storage.onChanged.addListener(function(event) {
-// 		const changes = event.settings.newValue;
-// 		if (changes.hasOwn(permissionName)) {
-// 			const setting = changes[permissionName];
-// 			callback(typeof setting === "object" ? setting.active : setting);
-// 		}
-// 	})
-// }
+});

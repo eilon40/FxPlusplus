@@ -114,8 +114,9 @@ function shouldRun(matchPattern) {
     return pattern.test(urlPath);
 }
 
-function fetcher(url, opt = {}) {
-    return fetch(url, opt).then(response => response.text());
+async function fetcher(url, opt = {}) {
+    const response = await fetch(url, opt);
+    return await response.text();
 }
 // Author ID: 967488
 injectStyle("forumdisplay", "showAutoPinned", "#stickies li.threadbit:nth-child(n+4) { display: list-item !important; } .morestick { display: none !important; }");
@@ -264,14 +265,15 @@ onMatchIfLoggedIn("show(post|thread)", "showLikeLimit", async function() {
     const brokenHeartUrl = 'url("https://em-content.zobj.net/source/google/387/broken-heart_1f494.png")';
     let toRemove = [];
     // For now, this is good. In the future, consider verifying the full name and not just if it includes certain text (to detect fake accounts).
-    function checkLike(postid) {
-        return fetcher("https://www.fxp.co.il/ajax.php", {
+    async function checkLike(postid) {
+        const response = await fetcher("https://www.fxp.co.il/ajax.php", {
             method: "POST",
             headers: {
                 "content-type": "application/x-www-form-urlencoded",
             },
             body: `do=wholikepost&postid=${postid}&securitytoken=${rawWindow.SECURITYTOKEN}`,
-        }).then(response => response.includes(rawWindow.my_user_name));
+        });
+        return response.includes(rawWindow.my_user_name);
     }
 
     document.addEventListener("click", async function(event) {
@@ -710,7 +712,7 @@ onMatch("show(post|thread)|newreply", "none", async function() {
 });
 
 // TODO: refactor this function to use a Promise
-function logIntoUser(user) {
+async function logIntoUser(user) {
     const savedUserData = GM_getValue("savedUserData", []);
     const userData = savedUserData.find(entry => entry.user === user);
 
@@ -719,26 +721,23 @@ function logIntoUser(user) {
         return;
     }
 
-    logout(success => {
-        if (!success) {
-            console.error("Logout failed. Aborting login.");
-            return;
-        }
+    const success = await logout();
+    if (!success) {
+        return console.error("Logout failed. Aborting login.");
+    }
 
-        login(user, userData.passmd5, status => {
-            switch (status) {
-                case 1:
-                    console.log("✅ Logged in successfully");
-                    break;
-                case 0:
-                    console.error("❌ Login failed: Invalid credentials");
-                    break;
-                default:
-                    console.warn("⚠️ Login restricted or unknown status");
-                    break;
-            }
-        });
-    });
+    const status = await login(user, userData.passmd5);
+    switch (status) {
+        case 1:
+            console.log("✅ Logged in successfully");
+            break;
+        case 2:
+            console.warn("⚠️ Login restricted");
+            break;
+        default:
+            console.error("❌ Login failed: Invalid credentials");
+            break;
+    }
 }
 
 function saveUserData(username, passmd5, oldUsername) {
@@ -759,46 +758,43 @@ function saveUserData(username, passmd5, oldUsername) {
     GM_setValue("savedUserData", savedUserData);
 }
 
-function logout(callback) {
-    fetcher("https://fxp.co.il/")
-        .then(response => {
-            const doc = new DOMParser().parseFromString(response, "text/html");
-            const logoutLink = doc.querySelector("a[href*='do=logout']");
-
-            if (!logoutLink) {
-                callback(false);
-                return;
-            }
-
-            const outUrl = fxpDomain + logoutLink.getAttribute("href");
-            fetcher(outUrl)
-                .then(() => callback(true))
-                .catch(() => callback(false));
-        })
-        .catch(() => callback(false));
+async function logout() {
+    const fxpDomain = "https://fxp.co.il/";
+    try {
+        const response = await fetcher(fxpDomain);
+        const doc = new DOMParser().parseFromString(response, "text/html");
+        const logoutLink = doc.querySelector("a[href*='do=logout']");
+        
+        if (!logoutLink) return false;
+        const outUrl = fxpDomain + logoutLink.getAttribute("href");
+        fetcher(outUrl).then(() => true).catch(() => false);
+    } catch(err) {
+        return false;
+    }
 }
 
-function login(username, passmd5, callback) {
+async function login(username, passmd5) {
     const postData = {
-        vb_login_username: username,
-        vb_login_md5password: passmd5,
-        vb_login_md5password_utf: passmd5,
-        securitytoken: "guest",
-        do: "login",
-        cookieuser: 1
+        method: "POST",
+        body: {
+            vb_login_username: username,
+            vb_login_md5password: passmd5,
+            vb_login_md5password_utf: passmd5,
+            securitytoken: "guest",
+            do: "login",
+            cookieuser: 1
+        }
     };
 
-    fetcher("https://www.fxp.co.il/login.php?do=login", postData)
-        .then(data => {
-            let status = 0;
+    try {
+        const data = await fetcher("https://www.fxp.co.il/login.php", postData);
+        let status = 0;
 
-            if (data.includes("התחברת בהצלחה")) status = 1;
-            else if (data.includes("במספר הפעמים המרבי")) status = 2;
-
-            callback(status);
-        })
-        .catch(err => {
-            console.error("Login request failed:", err);
-            callback(0);
-        });
+        if (data.includes("התחברת בהצלחה")) status = 1;
+        else if (data.includes("במספר הפעמים המרבי")) status = 2;
+        return status;
+    } catch (err) {
+        console.error("Login request failed:", err);
+        return 0;
+    }
 }
