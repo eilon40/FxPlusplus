@@ -52,11 +52,28 @@ CKEDITOR.tools.callFunction(41, this); //131,'almoni-dl'
 The system that automatically disables and enables the feature is currently not working in either version.
 TODO:
 - Implement audio file upload
-- Support multiple users
 - disable/enable on the same page and prevent reload
 - BBCode support
 - Hide sticky posts
 */
+//<a class="report" href="javascript:alert(123)" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' font-size='15' text-anchor='middle' dominant-baseline='central'><text x='50%' y='50%'>%E2%9A%A0%EF%B8%8F</text></svg>');"></a>
+// `[CENTER][FONT=open sans hebrew][SIZE=5]דיווח קריטי
+// [/SIZE][SIZE=3]XXX
+// [/SIZE][/FONT][/CENTER]
+// [FONT=open sans hebrew][B]א. קישור לפרופיל המשתמש של פותח האשכול:
+// [/B]https://www.fxp.co.il/member.php?u=XX
+// [B]ב. תאריך לידה של המשתמש:
+// [/B]אין תאריך בפרופיל או התאריך
+// [B]ג. קישור לאשכול עצמו:
+// [/B]https://www.fxp.co.il/showthread.php?t=xx
+// [B]ד. תאריך ושעת פתיחת האשכול:
+// [/B]להוסיף
+// [B]ה. מתי התחבר המשתמש בפעם האחרונה:
+// [/B]תאריך
+// [B]ו. כתובת מייל של המשתמש:
+// [/B]צריך לשנות!!
+// [B]ז. קישור לתמונת תצלום מסך של האשכול: [/B][/FONT][FONT=open sans hebrew][SIZE=3][CENTER][COLOR=#D7DADC][FONT=&quot][/FONT][/COLOR][/CENTER][/SIZE][/FONT]
+// `
 const rawWindow = unsafeWindow;
 const queryParams = new URLSearchParams(location.search);
 
@@ -288,7 +305,6 @@ onMatchIfLoggedIn("show(post|thread)", "smiles", async function() {
 })
 onMatchIfLoggedIn("show(post|thread)", "showLikeLimit", async function() {
     let toRemove = [];
-    // For now, this is good. In the future, consider verifying the full name and not just if it includes certain text (to detect fake accounts).
     async function checkLike(postid) {
         const response = await fetcher("https://www.fxp.co.il/ajax.php", {
             method: "POST",
@@ -297,7 +313,7 @@ onMatchIfLoggedIn("show(post|thread)", "showLikeLimit", async function() {
             },
             body: `do=wholikepost&postid=${postid}&securitytoken=${rawWindow.SECURITYTOKEN}`,
         });
-        return response.includes(rawWindow.my_user_name);
+        return response.includes(`>${rawWindow.my_user_name}<`);
     }
     Listener(async e => {
         if (e.method !== "POST" || e.url !== "ajax.php") {
