@@ -761,7 +761,6 @@ onMatch("/(?:index.php)?", "allforums", async function() {
     const proxy = "https://corsproxy.io/?";
 
     const db = JSON.parse(await fetcher(proxy + encodeURIComponent(url)));
-    document.querySelectorAll('[id*="hrefi_down_"]').forEach(t => t.remove()) //TODO: hide
     const dont = [...document.querySelectorAll('[id*="hrefi_down_"]')].map(t => t.id.replace(/\D+/, ''));
     const titles = JSON.parse(await fetcher("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach"));
     for (const { id, title, category } of db.forums) {
@@ -873,5 +872,6 @@ async function login(vb_login_username, vb_login_password) {
         alert("Login request failed");
     }
 }
+
 
 
