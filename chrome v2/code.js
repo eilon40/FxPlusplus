@@ -18,6 +18,7 @@ const cfg = new MonkeyConfig({
         connectedStaff: checkbox("הצג צוות מחובר"),
         allforums: checkbox('מציג את כל הפורומים בעיצוב החדש'),
         notitle: checkbox('אל תציג כותרות בעיצוב החדש'),
+        noimages: checkbox('אל תציג תמונות בעיצוב החדש'),
         showCounts: checkbox('מציג את מספר הפוסטים ואת כמות המשתמשים המחוברים'),
         pms: checkbox("מציג הודעות פרטיות שנמחקו"),
         showForumStats: checkbox('הצג סטטיסטיקות פורומים'),
@@ -754,82 +755,57 @@ onMatch("upload.php", 'none', function() {
     }
 });
 
+injectStyle("/(?:index.php)?", "noimages", ".imagediv { display:  none !important}")
 injectStyle("/(?:index.php)?", "notitle", ".favtitle[style*=\"top\"] { display: none !important }")
 onMatch("/(?:index.php)?", "allforums", async function() {
-    if (getCookie("bb_forumHomeStyle") == 1) return;
+    //Toda: add cache
+    const style = getCookie("bb_forumHomeStyle");
+    if (style == 1) return;
 
-     // temp
-    async function fetchWithCache(url, maxAgeSeconds = 1200) {
-        const cacheKey = `cache_${url}`;
-        const cached = localStorage.getItem(cacheKey);
-
-        if (cached) {
-            const { timestamp, data } = JSON.parse(cached);
-            const age = (Date.now() - timestamp) / 1000; // age in seconds
-            if (age < maxAgeSeconds) {
-                console.log('Returning cached data');
-                return data;
-            }
-        }
-
-        console.log('Fetching new data');
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-
-        localStorage.setItem(cacheKey, JSON.stringify({
-            timestamp: Date.now(),
-            data
-        }));
-
-        return data;
-    }
-    //end temp
     let toRemove = [];
-    // It can be dynamic, but I chose not to.
-    const url = "https://pastebin.com/raw/C7QM1Hx5";
-    const proxy = "https://corsproxy.io/?"; // slow
-    
-    // const db = JSON.parse(await fetcher(proxy + encodeURIComponent(url), {
-    //     headers: {
-    //         "Cache-Control": 'max-age=1200'
-    //     },
-    //     cache: "force-cache"
-    // })); // Caching won’t work because of the proxy.
-    const compcat = cfg.get("notitle");
-    const db = await fetchWithCache(proxy + encodeURIComponent(url))
-    const size = compcat ? '16px' : '32px';
-     GM_addStyle(`
+    setCookie('bb_forumHomeStyle', 1)
+    const html = await fetcher('https://www.fxp.co.il');
+    setCookie('bb_forumHomeStyle', 0)
+    // Using a parser to extract the ID instead of regex because I didn't want to write one
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const digit = a => a.replace(/\D+/g, '') || '';
+    const forums = Array.from(doc.querySelectorAll('.forum_title a'), a => ({
+        id: digit(a.href),
+        title: a.textContent,
+        category: digit(a.closest('ol').id)
+    }));
+
+    console.log(forums);
+    const compact = cfg.get("notitle");
+    const size = `${compact ? '16' : '32'}px !important`;
+    GM_addStyle(`
     .favswipecontent { height: unset !important }
     .favcontainer { height: 50% !important }
-    .imagediv div, .imagediv img { height: ${size} !important; width: ${size} !important }
+    .imagediv div, .imagediv img { height: ${size}; width: ${size} }
     `)
 
-    const dont = [...document.querySelectorAll('[id*="hrefi_down_"]')].map(t => t.id.replace(/\D+/, ''));
-    for (const { id, title, category } of db.forums) {
-        if (id == 2450 || dont.includes(String(id))) continue;
-        const parentCategory = document.querySelector(`.hp_category:has([href='forumdisplay.php?f=${category.id}'])`);
+    const exists = [...document.querySelectorAll('[id*="hrefi_down_"]')].map(t => t.id.replace(/\D+/, ''));
+    for (const {category, id, title} of forums) {
+        if (id == '2450' || exists.includes(id)) continue;
+        const parentCategory = document.querySelector(`.hp_category:has([href='forumdisplay.php?f=${category}'])`);
         // GM_addElement(parentCategory, "hr", {
         //     style: "width:65%;margin:0 auto;"
         // });
-
         const a = GM_addElement(parentCategory, "a", {
             id: `hrefi_down_${id}`,
             href: `forumdisplay.php?f=${id}`
         });
-        
+
         toRemove.push(a);
 
         const li = GM_addElement(a, "li", {
             class: "favcontainer",
             id: `topfavli_hp${id}`,
-            // style: "height: 50%"
         });
 
         const swipe = GM_addElement(li, "div", {
             id: `favswipecontenttop${id}`,
             class: "favswipecontent",
-            // style: "height: unset"
         });
 
         const content = GM_addElement(swipe, "div", {
@@ -854,15 +830,16 @@ onMatch("/(?:index.php)?", "allforums", async function() {
         GM_addElement(content, "div", {
             class: "favtitle",
             id: "favempty",
-            // textContent: titles.find(t => t.forumid == id)?.lastthread || '',
             style: "top: 20px;font-weight: normal;"
         });
+
     }
-    if (!compcat) { // the ugly way
-        const titles = JSON.parse(await fetchWithCache("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach", 300));
+
+    if (!compact) { // the ugly way
+        const titles = JSON.parse(await fetcher("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach"));
         titles.forEach(t => {
             const f = document.querySelector(`contenttop${t.forumid} #favempty`);
-            f && (f.innerHTML = t.lastthread)  
+            f && (f.innerHTML = t.lastthread)
         })
     }
     return () => {
@@ -870,38 +847,56 @@ onMatch("/(?:index.php)?", "allforums", async function() {
         toRemove = [];
     }
 })
-// onMatch("show(post|thread)", 'none', async function() {
-// const original = document.querySelector('.report');
-//     const sog = prompt("סוג הדיווח הקריטי");
-//     const post = document.querySelector('#post_224635326');
-//     const userId = post.querySelector('[data-user-id]').dataset.userId;
-//     const res = await fetch("/member.php?u=" + userId);
-//     const html = await res.text();
-// const getFormatDate = (days = 0) => new Date(Date.now() - days * 86400000).toLocaleDateString('en-GB').replaceAll('/', '-');
+/*
+onMatch("show(post|thread)", 'none', async function() {
+    GM_addElement('script', {
+        src: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+    })
+    const original = document.querySelector('.report');
+    const postId = original.href.replace(/\D+/, '');
+    const post = document.querySelector('#post_' + postId);
+    if (!post) return;
 
-//     console.log();
+    const sog = prompt("סוג הדיווח הקריטי");
+    const userId = post.querySelector('[data-user-id]').dataset.userId;
 
-//         `[FONT=open sans hebrew]
-//             [CENTER]
-//                 [SIZE=5]דיווח קריטי[/SIZE]
-//                 [SIZE=3]${sog}[/SIZE]
-//             [/CENTER]
-//             [B]א. קישור לפרופיל המשתמש של פותח האשכול:[/B]
-//             https://www.fxp.co.il/member.php?u=${post.querySelector('[data-user-id]').dataset.userId}
-//             [B]ב. תאריך לידה של המשתמש:[/B]
-//             אין תאריך בפרופיל או התאריך
-//             [B]ג. קישור לאשכול עצמו:[/B]
-//             https://www.fxp.co.il/showthread.php?t=${THREAD_ID_FXP}
-//             [B]ד. תאריך ושעת פתיחת האשכול:[/B]
-//             להוסיף
-//             [B]ה. מתי התחבר המשתמש בפעם האחרונה:[/B]
-//             תאריך
-//             [B]ו. כתובת מייל של המשתמש:[/B]
-//             צריך לשנות!!
-//             [B]ז. קישור לתמונת תצלום מסך של האשכול: [/B]
-//         [/FONT]`
-//         window.open("https://www.fxp.co.il/newthread.php?do=newthread&f=9771");
-// })
+    const html = await fetcher(`/member.php?u=${userId}`);
+    // const parser = new DOMParser();
+    // const doc = parser.parseFromString(html, 'text/html');
+
+    let birthDate = ''; //doc.querySelector('.')?.textContent || "אין תאריך בפרופיל";
+    let lastLogin = ''; //doc.querySelector('.')?.textContent || "לא ידוע";
+    const canvas = await html2canvas(post);
+    const imgData = canvas.toDataURL('image/png');
+    //Todo: upload to imagesup
+    const getFormatDate = (days = 0) => new Date(Date.now() - days * 86400000)
+        .toLocaleDateString('en-GB')
+        .replaceAll('/', '-');
+    // const screenshot(element) => element.takeshoot()
+    const content = `[FONT=open sans hebrew]
+    [CENTER]
+    [SIZE=5]דיווח קריטי[/SIZE]
+    [SIZE=3]${sog}[/SIZE]
+    [/CENTER]
+    [B]א. קישור לפרופיל המשתמש של פותח האשכול:[/B]
+    https://www.fxp.co.il/member.php?u=${userId}
+    [B]ב. תאריך לידה של המשתמש:[/B]
+    ${birthDate}
+    [B]ג. קישור לאשכול עצמו:[/B]
+    https://www.fxp.co.il/showpost.php?p=${threadId}
+    [B]ד. תאריך ושעת פתיחת האשכול:[/B]
+    ${getFormatDate()} 
+    [B]ה. מתי התחבר המשתמש בפעם האחרונה:[/B]
+    ${lastLogin}
+    [B]ו. כתובת מייל של המשתמש:[/B]
+    יש לשנות
+    [B]ז. קישור לתמונת תצלום מסך של האשכול:[/B]
+    
+    [/FONT]`;
+    const url = `https://www.fxp.co.il/newthread.php?do=newthread&f=9771&message=${encodeURIComponent(content)}`;
+    window.open(url);
+})
+*/
 
 async function login(vb_login_username, vb_login_password) {
     const postData = {
