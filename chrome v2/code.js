@@ -762,9 +762,12 @@ onMatch("/(?:index.php)?", "allforums", async function() {
 
     const db = JSON.parse(await fetcher(proxy + encodeURIComponent(url)));
     document.querySelectorAll('[id*="hrefi_down_"]').forEach(t => t.remove()) //TODO: hide
-
+    const dont = [...document.querySelectorAll('[id*="hrefi_down_"]')].map(t => t.id.replace(/\D+/, ''));
+    const titles = JSON.parse(await fetcher("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach"));
     for (const { id, title, category } of db.forums) {
+        if (id == 2450 || dont.includes(String(id))) continue;
         const parentCategory = document.querySelector(`.hp_category:has([href='forumdisplay.php?f=${category.id}'])`);
+        
         parentCategory.innerHTML += `
         <hr style="width: 65%;margin: 0 auto;">
         <a id="hrefi_down_${id}" href="forumdisplay.php?f=${id}">
@@ -775,7 +778,7 @@ onMatch("/(?:index.php)?", "allforums", async function() {
                             <div style='float: right; height: 60px; border-radius: 30px; width: 60px; margin-left: 5px; background-image: url("https://images.weserv.nl/?url=https://static.fcdn.co.il/forumbg/${id}.gif&w=60&h=60&t=square&a=left");'></div>
                         </div>
                         <div class="favtitle">${title}</div>
-                        <div class="favtitle" style="top: 20px;font-weight: normal;"></div>
+                        <div class="favtitle" style="top: 20px;font-weight: normal;">${titles.find(t => t.forumid == id)?.lastthread || ''}</div>
                     </div>
                 </div>
             </li>
