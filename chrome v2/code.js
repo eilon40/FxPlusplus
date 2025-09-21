@@ -17,6 +17,7 @@ const cfg = new MonkeyConfig({
         showLikeLimit: checkbox("הצג מגבלת לייקים"),
         connectedStaff: checkbox("הצג צוות מחובר"),
         allforums: checkbox('מציג את כל הפורומים בעיצוב החדש'),
+        notitle: checkbox('אל תציג כותרות בעיצוב החדש'),
         showCounts: checkbox('מציג את מספר הפוסטים ואת כמות המשתמשים המחוברים'),
         pms: checkbox("מציג הודעות פרטיות שנמחקו"),
         showForumStats: checkbox('הצג סטטיסטיקות פורומים'),
@@ -753,65 +754,120 @@ onMatch("upload.php", 'none', function() {
     }
 });
 
-//TODO: add cache (20 min)
-//TODO: make it better this temp
+injectStyle("/(?:index.php)?", "notitle", ".favtitle[style*=\"top\"] { display: none !important }")
 onMatch("/(?:index.php)?", "allforums", async function() {
+    if (getCookie("bb_forumHomeStyle") == 1) return;
+
+     // temp
+    async function fetchWithCache(url, maxAgeSeconds = 1200) {
+        const cacheKey = `cache_${url}`;
+        const cached = localStorage.getItem(cacheKey);
+
+        if (cached) {
+            const { timestamp, data } = JSON.parse(cached);
+            const age = (Date.now() - timestamp) / 1000; // age in seconds
+            if (age < maxAgeSeconds) {
+                console.log('Returning cached data');
+                return data;
+            }
+        }
+
+        console.log('Fetching new data');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+
+        localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            data
+        }));
+
+        return data;
+    }
+    //end temp
+    let toRemove = [];
     // It can be dynamic, but I chose not to.
     const url = "https://pastebin.com/raw/C7QM1Hx5";
-    const proxy = "https://corsproxy.io/?";
+    const proxy = "https://corsproxy.io/?"; // slow
+    
+    // const db = JSON.parse(await fetcher(proxy + encodeURIComponent(url), {
+    //     headers: {
+    //         "Cache-Control": 'max-age=1200'
+    //     },
+    //     cache: "force-cache"
+    // })); // Caching won’t work because of the proxy.
+    const compcat = cfg.get("notitle");
+    const db = await fetchWithCache(proxy + encodeURIComponent(url))
+    const size = compcat ? '16px' : '32px';
+     GM_addStyle(`
+    .favswipecontent { height: unset !important }
+    .favcontainer { height: 50% !important }
+    .imagediv div, .imagediv img { height: ${size} !important; width: ${size} !important }
+    `)
 
-    const db = JSON.parse(await fetcher(proxy + encodeURIComponent(url)));
     const dont = [...document.querySelectorAll('[id*="hrefi_down_"]')].map(t => t.id.replace(/\D+/, ''));
-    const titles = JSON.parse(await fetcher("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach"));
     for (const { id, title, category } of db.forums) {
         if (id == 2450 || dont.includes(String(id))) continue;
         const parentCategory = document.querySelector(`.hp_category:has([href='forumdisplay.php?f=${category.id}'])`);
+        // GM_addElement(parentCategory, "hr", {
+        //     style: "width:65%;margin:0 auto;"
+        // });
+
+        const a = GM_addElement(parentCategory, "a", {
+            id: `hrefi_down_${id}`,
+            href: `forumdisplay.php?f=${id}`
+        });
         
-        parentCategory.innerHTML += `
-        <hr style="width: 65%;margin: 0 auto;">
-        <a id="hrefi_down_${id}" href="forumdisplay.php?f=${id}">
-            <li class="favcontainer" id="topfavli_hp${id}">
-                <div id="favswipecontenttop${id}" class="favswipecontent">
-                    <div class="content" id="contenttop${id}">
-                        <div style="float: right;" class="imagediv">
-                            <div style='float: right; height: 60px; border-radius: 30px; width: 60px; margin-left: 5px; background-image: url("https://images.weserv.nl/?url=https://static.fcdn.co.il/forumbg/${id}.gif&w=60&h=60&t=square&a=left");'></div>
-                        </div>
-                        <div class="favtitle">${title}</div>
-                        <div class="favtitle" style="top: 20px;font-weight: normal;">${titles.find(t => t.forumid == id)?.lastthread || ''}</div>
-                    </div>
-                </div>
-            </li>
-        </a>`
-        // const link = GM_addElement(parentCategory, 'a', {
-        //     id: "hrefi_down_" + id,
-        //     href: "forumdisplay.php?f=" + id
-        // });
+        toRemove.push(a);
 
-        // const container = GM_addElement(link, "div", {
-        //     class: "content",
-        //     id: "contenttop" + id
-        // });
-    
-        // const imageDiv = GM_addElement(container, "div", {
-        //     class: "imagediv",
-        //     style: "float: right;"
-        // });
+        const li = GM_addElement(a, "li", {
+            class: "favcontainer",
+            id: `topfavli_hp${id}`,
+            // style: "height: 50%"
+        });
 
-        // GM_addElement(imageDiv, "img", {
-        //     src: `https://images.weserv.nl/?url=https://static.fcdn.co.il/forumbg/${id}.gif&w=60&h=60&t=square&a=left`,
-        //     style: "width: 60px;",
-        // });
+        const swipe = GM_addElement(li, "div", {
+            id: `favswipecontenttop${id}`,
+            class: "favswipecontent",
+            // style: "height: unset"
+        });
 
-        // GM_addElement(container, "div", {
-        //     class: "favtitle",
-        //     textContent: title
-        // });
+        const content = GM_addElement(swipe, "div", {
+            id: `contenttop${id}`,
+            class: "content"
+        });
 
-        // GM_addElement(container, "div", {
-        //     class: "favtitle",
-        //     style: "top: 20px;font-weight: normal;",
-        //     textContent: "" // Maybe I’ll add it in the future, but for now I don’t see the need.
-        // });
+        const imagediv = GM_addElement(content, "div", {
+            style: "float: right;",
+            class: "imagediv"
+        });
+
+        GM_addElement(imagediv, "div", {
+            style: `float: right; height: 60px; border-radius: 30px; width: 60px; margin-left: 5px; background-image: url("https://images.weserv.nl/?url=https://static.fcdn.co.il/forumbg/${id}.gif&w=60&h=60&t=square&a=left");`
+        });
+
+        GM_addElement(content, "div", {
+            class: "favtitle",
+            textContent: title
+        });
+
+        GM_addElement(content, "div", {
+            class: "favtitle",
+            id: "favempty",
+            // textContent: titles.find(t => t.forumid == id)?.lastthread || '',
+            style: "top: 20px;font-weight: normal;"
+        });
+    }
+    const titles = JSON.parse(await fetchWithCache("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach", 300));
+    // the ugly way
+    titles.forEach(t => {
+        const f = document.querySelector(`contenttop${t.forumid} #favempty`);
+        f && (f.innerHTML = t.lastthread)  
+    })
+
+    return () => {
+        toRemove.forEach(el => el.remove());
+        toRemove = [];
     }
 })
 // onMatch("show(post|thread)", 'none', async function() {
@@ -872,6 +928,5 @@ async function login(vb_login_username, vb_login_password) {
         alert("Login request failed");
     }
 }
-
 
 
