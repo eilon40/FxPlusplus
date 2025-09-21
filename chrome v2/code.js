@@ -16,6 +16,7 @@ const cfg = new MonkeyConfig({
         showDeletedPost: checkbox("הצג פוסט שנמחק"),
         showLikeLimit: checkbox("הצג מגבלת לייקים"),
         connectedStaff: checkbox("הצג צוות מחובר"),
+        allforums: checkbox('מציג את כל הפורומים בעיצוב החדש'),
         showCounts: checkbox('מציג את מספר הפוסטים ואת כמות המשתמשים המחוברים'),
         pms: checkbox("מציג הודעות פרטיות שנמחקו"),
         showForumStats: checkbox('הצג סטטיסטיקות פורומים'),
@@ -56,24 +57,6 @@ TODO:
 - BBCode support
 - Hide sticky posts
 */
-//<a class="report" href="javascript:alert(123)" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' font-size='15' text-anchor='middle' dominant-baseline='central'><text x='50%' y='50%'>%E2%9A%A0%EF%B8%8F</text></svg>');"></a>
-// `[CENTER][FONT=open sans hebrew][SIZE=5]דיווח קריטי
-// [/SIZE][SIZE=3]XXX
-// [/SIZE][/FONT][/CENTER]
-// [FONT=open sans hebrew][B]א. קישור לפרופיל המשתמש של פותח האשכול:
-// [/B]https://www.fxp.co.il/member.php?u=XX
-// [B]ב. תאריך לידה של המשתמש:
-// [/B]אין תאריך בפרופיל או התאריך
-// [B]ג. קישור לאשכול עצמו:
-// [/B]https://www.fxp.co.il/showthread.php?t=xx
-// [B]ד. תאריך ושעת פתיחת האשכול:
-// [/B]להוסיף
-// [B]ה. מתי התחבר המשתמש בפעם האחרונה:
-// [/B]תאריך
-// [B]ו. כתובת מייל של המשתמש:
-// [/B]צריך לשנות!!
-// [B]ז. קישור לתמונת תצלום מסך של האשכול: [/B][/FONT][FONT=open sans hebrew][SIZE=3][CENTER][COLOR=#D7DADC][FONT=&quot][/FONT][/COLOR][/CENTER][/SIZE][/FONT]
-// `
 const rawWindow = unsafeWindow;
 const queryParams = new URLSearchParams(location.search);
 
@@ -770,6 +753,99 @@ onMatch("upload.php", 'none', function() {
     }
 });
 
+//TODO: add cache (20 min)
+//TODO: make it better this temp
+onMatch("/(?:index.php)?", "allforums", async function() {
+    // It can be dynamic, but I chose not to.
+    const url = "https://pastebin.com/raw/C7QM1Hx5";
+    const proxy = "https://corsproxy.io/?";
+
+    const db = JSON.parse(await fetcher(proxy + encodeURIComponent(url)));
+    document.querySelectorAll('[id*="hrefi_down_"]').forEach(t => t.remove()) //TODO: hide
+
+    for (const { id, title, category } of db.forums) {
+        const parentCategory = document.querySelector(`.hp_category:has([href='forumdisplay.php?f=${category.id}'])`);
+        parentCategory.innerHTML += `
+        <hr style="width: 65%;margin: 0 auto;">
+        <a id="hrefi_down_${id}" href="forumdisplay.php?f=${id}">
+            <li class="favcontainer" id="topfavli_hp${id}">
+                <div id="favswipecontenttop${id}" class="favswipecontent">
+                    <div class="content" id="contenttop${id}">
+                        <div style="float: right;" class="imagediv">
+                            <div style='float: right; height: 60px; border-radius: 30px; width: 60px; margin-left: 5px; background-image: url("https://images.weserv.nl/?url=https://static.fcdn.co.il/forumbg/${id}.gif&w=60&h=60&t=square&a=left");'></div>
+                        </div>
+                        <div class="favtitle">${title}</div>
+                        <div class="favtitle" style="top: 20px;font-weight: normal;"></div>
+                    </div>
+                </div>
+            </li>
+        </a>`
+        // const link = GM_addElement(parentCategory, 'a', {
+        //     id: "hrefi_down_" + id,
+        //     href: "forumdisplay.php?f=" + id
+        // });
+
+        // const container = GM_addElement(link, "div", {
+        //     class: "content",
+        //     id: "contenttop" + id
+        // });
+    
+        // const imageDiv = GM_addElement(container, "div", {
+        //     class: "imagediv",
+        //     style: "float: right;"
+        // });
+
+        // GM_addElement(imageDiv, "img", {
+        //     src: `https://images.weserv.nl/?url=https://static.fcdn.co.il/forumbg/${id}.gif&w=60&h=60&t=square&a=left`,
+        //     style: "width: 60px;",
+        // });
+
+        // GM_addElement(container, "div", {
+        //     class: "favtitle",
+        //     textContent: title
+        // });
+
+        // GM_addElement(container, "div", {
+        //     class: "favtitle",
+        //     style: "top: 20px;font-weight: normal;",
+        //     textContent: "" // Maybe I’ll add it in the future, but for now I don’t see the need.
+        // });
+    }
+})
+// onMatch("show(post|thread)", 'none', async function() {
+// const original = document.querySelector('.report');
+//     const sog = prompt("סוג הדיווח הקריטי");
+//     const post = document.querySelector('#post_224635326');
+//     const userId = post.querySelector('[data-user-id]').dataset.userId;
+//     const res = await fetch("/member.php?u=" + userId);
+//     const html = await res.text();
+// const getFormatDate = (days = 0) => new Date(Date.now() - days * 86400000).toLocaleDateString('en-GB').replaceAll('/', '-');
+
+//     console.log();
+
+//         `[FONT=open sans hebrew]
+//             [CENTER]
+//                 [SIZE=5]דיווח קריטי[/SIZE]
+//                 [SIZE=3]${sog}[/SIZE]
+//             [/CENTER]
+//             [B]א. קישור לפרופיל המשתמש של פותח האשכול:[/B]
+//             https://www.fxp.co.il/member.php?u=${post.querySelector('[data-user-id]').dataset.userId}
+//             [B]ב. תאריך לידה של המשתמש:[/B]
+//             אין תאריך בפרופיל או התאריך
+//             [B]ג. קישור לאשכול עצמו:[/B]
+//             https://www.fxp.co.il/showthread.php?t=${THREAD_ID_FXP}
+//             [B]ד. תאריך ושעת פתיחת האשכול:[/B]
+//             להוסיף
+//             [B]ה. מתי התחבר המשתמש בפעם האחרונה:[/B]
+//             תאריך
+//             [B]ו. כתובת מייל של המשתמש:[/B]
+//             צריך לשנות!!
+//             [B]ז. קישור לתמונת תצלום מסך של האשכול: [/B]
+//         [/FONT]`
+//         window.open("https://www.fxp.co.il/newthread.php?do=newthread&f=9771");
+// })
+
+
 async function login(vb_login_username, vb_login_password) {
     const postData = {
         method: "POST",
@@ -794,3 +870,5 @@ async function login(vb_login_username, vb_login_password) {
         alert("Login request failed");
     }
 }
+
+
