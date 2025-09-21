@@ -858,13 +858,13 @@ onMatch("/(?:index.php)?", "allforums", async function() {
             style: "top: 20px;font-weight: normal;"
         });
     }
-    const titles = JSON.parse(await fetchWithCache("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach", 300));
-    // the ugly way
-    titles.forEach(t => {
-        const f = document.querySelector(`contenttop${t.forumid} #favempty`);
-        f && (f.innerHTML = t.lastthread)  
-    })
-
+    if (!compcat) { // the ugly way
+        const titles = JSON.parse(await fetchWithCache("https://www.fxp.co.il/ajax.php?do=forumdisplayqserach", 300));
+        titles.forEach(t => {
+            const f = document.querySelector(`contenttop${t.forumid} #favempty`);
+            f && (f.innerHTML = t.lastthread)  
+        })
+    }
     return () => {
         toRemove.forEach(el => el.remove());
         toRemove = [];
@@ -903,7 +903,6 @@ onMatch("/(?:index.php)?", "allforums", async function() {
 //         window.open("https://www.fxp.co.il/newthread.php?do=newthread&f=9771");
 // })
 
-
 async function login(vb_login_username, vb_login_password) {
     const postData = {
         method: "POST",
@@ -928,5 +927,3 @@ async function login(vb_login_username, vb_login_password) {
         alert("Login request failed");
     }
 }
-
-
